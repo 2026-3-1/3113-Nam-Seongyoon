@@ -1,49 +1,67 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './modules/user/user.module';
-// import { CategoryModule } from './modules/category/category.module';
-// import { CourseModule } from './modules/course/course.module';
-// import { ChapterModule } from './modules/chapter/chapter.module';
-// import { EnrollmentModule } from './modules/enrollment/enrollment.module';
-// import { ReviewModule } from './modules/review/review.module';
-// import { CartModule } from './modules/cart/cart.module';
-// import { OrderModule } from './modules/order/order.module';
-// import { InstructorModule } from './modules/instructor/instructor.module';
+import { Category } from './category/entities/category.entity';
+import { Course } from './course/entities/course.entity';
+import { Chapter } from './chapter/entities/chapter.entity';
+import { Review } from './review/entities/review.entity';
+import { User } from './user/entities/user.entity';
+import { CartItem } from './cart/entities/cart-item.entity';
+import { Order } from './order/entities/order.entity';
+import { OrderItem } from './order/entities/order-item.entity';
+import { Enrollment } from './enrollment/entities/enrollment.entity';
+import { InstructorApplication } from './instructor/entities/instructor-application.entity';
+
+import { CategoryModule } from './category/category.module';
+import { CourseModule } from './course/course.module';
+import { ChapterModule } from './chapter/chapter.module';
+import { ReviewModule } from './review/review.module';
+import { UserModule } from './user/user.module';
+import { CartModule } from './cart/cart.module';
+import { OrderModule } from './order/order.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
+import { InstructorModule } from './instructor/instructor.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
-    // 환경변수
     ConfigModule.forRoot({ isGlobal: true }),
-
-    // TypeORM — MySQL 연결
-    // TypeOrmModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: (config: ConfigService) => ({
-    //     type: 'mysql',
-    //     host: config.get('DB_HOST', 'localhost'),
-    //     port: config.get<number>('DB_PORT', 3306),
-    //     username: config.get('DB_USERNAME', 'root'),
-    //     password: config.get('DB_PASSWORD', ''),
-    //     database: config.get('DB_DATABASE', 'certificatedu'),
-    //     entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    //     synchronize: true,   // 개발용으로 true, 프로덕션에서는 false
-    //     logging: config.get('NODE_ENV') === 'development',
-    //     timezone: 'Z',
-    //   }),
-    // }),
-
-    // 도메인 모듈
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get('DB_HOST', 'localhost'),
+        port: config.get<number>('DB_PORT', 3306),
+        username: config.get('DB_USERNAME', 'root'),
+        password: config.get('DB_PASSWORD', ''),
+        database: config.get('DB_DATABASE', 'certificatedu'),
+        entities: [
+          Category,
+          Course,
+          Chapter,
+          Review,
+          User,
+          CartItem,
+          Order,
+          OrderItem,
+          Enrollment,
+          InstructorApplication,
+        ],
+        synchronize: true,
+        charset: 'utf8mb4',
+      }),
+      inject: [ConfigService],
+    }),
+    CategoryModule,
+    CourseModule,
+    ChapterModule,
+    ReviewModule,
     UserModule,
-    // CategoryModule,
-    // CourseModule,
-    // ChapterModule,
-    // EnrollmentModule,
-    // ReviewModule,
-    // CartModule,
-    // OrderModule,
-    // InstructorModule,
+    CartModule,
+    OrderModule,
+    EnrollmentModule,
+    InstructorModule,
+    SeedModule,
   ],
 })
 export class AppModule {}
