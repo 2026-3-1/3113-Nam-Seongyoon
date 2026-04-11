@@ -24,6 +24,9 @@ export class Chapter {
   @Column({ name: 'is_free', default: false })
   isFree: boolean;
 
+  @Column({ nullable: true })
+  videoUrl?: string;
+
   @ManyToOne(() => Course, (course) => course.chapters, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'course_id' })
   course: Course;

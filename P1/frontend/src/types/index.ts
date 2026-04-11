@@ -18,3 +18,11 @@ export interface Course {
   badge: string;
   duration: string;
 }
+
+export interface Chapter {
+  id: number;
+  title: string;
+  duration: string;
+  completed?: boolean;
+  videoUrl?: string;
+}
