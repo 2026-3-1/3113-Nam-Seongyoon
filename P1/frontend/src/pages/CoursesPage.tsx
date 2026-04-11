@@ -1,7 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { CATEGORIES, COURSES } from "../data/courses";
+import { getCategories, getCourses } from "../api";
 import s from "../styles/pages.module.css";
+
+interface Category {
+  id: number;
+  label: string;
+  icon: string;
+}
+
+interface Course {
+  id: number;
+  title: string;
+  instructorName: string;
+  rating: number;
+  reviewCount: number;
+  price: number;
+  originalPrice?: number;
+  tag?: string;
+  thumbnail?: string;
+  badge?: string;
+  duration?: string;
+  category?: { id: number };
+}
 
 const SORT_OPTIONS = [
   { value: "popular", label: "인기순" },
@@ -16,13 +37,28 @@ const TAG_CLASS: Record<string, string> = {
 };
 
 export default function CoursesPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [activeCat, setActiveCat] = useState(0);
   const [sort, setSort] = useState("popular");
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filtered = COURSES
-    .filter(c => activeCat === 0 || c.categoryId === activeCat)
-    .filter(c => c.title.includes(search) || c.instructor.includes(search))
+  useEffect(() => {
+    Promise.all([getCategories(), getCourses()]).then(([cats, cors]) => {
+      setCategories([{ id: 0, label: "전체", icon: "◈" }, ...cats]);
+      setCourses(cors);
+      setLoading(false);
+    }).catch((e) => {
+      setError("백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요. (" + (e?.message ?? e) + ")");
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = courses
+    .filter(c => activeCat === 0 || c.category?.id === activeCat)
+    .filter(c => c.title.includes(search) || c.instructorName?.includes(search))
     .sort((a, b) => {
       if (sort === "price_asc") return a.price - b.price;
       if (sort === "price_desc") return b.price - a.price;
@@ -30,6 +66,9 @@ export default function CoursesPage() {
       if (sort === "latest") return b.id - a.id;
       return b.reviewCount - a.reviewCount;
     });
+
+  if (loading) return <div className={s.container}>로딩 중...</div>;
+  if (error) return <div className={s.container} style={{ color: "var(--accent)", paddingTop: "2rem" }}>{error}</div>;
 
   return (
     <div className={s.container}>
@@ -45,7 +84,7 @@ export default function CoursesPage() {
 
       <div className={s.filterRow}>
         <div className={s.catFilter}>
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <button key={cat.id} onClick={() => setActiveCat(cat.id)}
               className={`${s.catBtn} ${activeCat === cat.id ? s.catBtnActive : ""}`}>
               {cat.icon} {cat.label}
@@ -66,14 +105,14 @@ export default function CoursesPage() {
             return (
               <Link to={`/courses/${course.id}`} key={course.id} className={s.courseCard}>
                 <div className={s.cardThumb}>
-                  {course.thumbnail}
+                  {course.thumbnail || "💻"}
                   {course.tag && <span className={TAG_CLASS[course.tag]}>{course.tag}</span>}
                   {discount && <span className={s.cardOff}>{discount}% OFF</span>}
                 </div>
                 <div className={s.cardBody}>
-                  <span className={s.cardBadge}>✓ {course.badge}</span>
+                  <span className={s.cardBadge}>✓ {course.badge || "인증강사"}</span>
                   <div className={s.cardTitle}>{course.title}</div>
-                  <div className={s.cardMeta}>{course.instructor} 강사 · {course.duration}</div>
+                  <div className={s.cardMeta}>{course.instructorName} 강사 · {course.duration}</div>
                   <div className={s.cardRating}>
                     <span className={s.cardStar}>★</span>
                     <span className={s.cardRatingNum}>{course.rating}</span>

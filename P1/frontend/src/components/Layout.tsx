@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import s from "../styles/Layout.module.css";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const user = useAuth();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -34,8 +36,18 @@ export function Navbar() {
           ))}
         </ul>
         <div className={s.navActions}>
-          <Link to="/login" className={s.btnGhost}>로그인</Link>
-          <Link to="/register" className={s.btnPrimary}>회원가입</Link>
+          <Link to="/cart" className={s.btnGhost}>🛒 장바구니</Link>
+          <Link to="/mypage" style={{ display:"flex", alignItems:"center", gap:"0.5rem", textDecoration:"none" }}>
+            <div style={{
+              width:32, height:32, borderRadius:"50%",
+              background:"linear-gradient(135deg,#4F8EF7,#A78BFA)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              color:"#fff", fontWeight:700, fontSize:"0.875rem",
+            }}>
+              {user.name[0]}
+            </div>
+            <span style={{ color:"var(--text)", fontSize:"0.875rem", fontWeight:500 }}>{user.name}</span>
+          </Link>
         </div>
         <button className={s.hamburger} onClick={() => setMenuOpen(!menuOpen)} aria-label="메뉴">
           <span style={{ transform: menuOpen ? "rotate(45deg) translateY(7px)" : "" }} />
@@ -49,8 +61,8 @@ export function Navbar() {
             <Link key={label} to={to} className={s.navLink}>{label}</Link>
           ))}
           <div className={s.mobileActions}>
-            <Link to="/login" className={`${s.mobileBtn} ${s.mobileBtnGhost}`}>로그인</Link>
-            <Link to="/register" className={`${s.mobileBtn} ${s.mobileBtnPrimary}`}>회원가입</Link>
+            <Link to="/cart" className={`${s.mobileBtn} ${s.mobileBtnGhost}`}>🛒 장바구니</Link>
+            <Link to="/mypage" className={`${s.mobileBtn} ${s.mobileBtnPrimary}`}>{user.name} 님</Link>
           </div>
         </div>
       )}

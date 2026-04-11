@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Category } from './category/entities/category.entity';
 import { Course } from './course/entities/course.entity';
@@ -25,32 +24,22 @@ import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 3306),
-        username: config.get('DB_USERNAME', 'root'),
-        password: config.get('DB_PASSWORD', ''),
-        database: config.get('DB_DATABASE', 'certificatedu'),
-        entities: [
-          Category,
-          Course,
-          Chapter,
-          Review,
-          User,
-          CartItem,
-          Order,
-          OrderItem,
-          Enrollment,
-          InstructorApplication,
-        ],
-        synchronize: true,
-        charset: 'utf8mb4',
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      type: 'better-sqlite3',
+      database: 'data/certificatedu.db',
+      entities: [
+        Category,
+        Course,
+        Chapter,
+        Review,
+        User,
+        CartItem,
+        Order,
+        OrderItem,
+        Enrollment,
+        InstructorApplication,
+      ],
+      synchronize: true,
     }),
     CategoryModule,
     CourseModule,

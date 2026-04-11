@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(mysql -u root -e \"SHOW DATABASES;\")",
+      "Bash(where mysql:*)",
+      "Bash(sc query:*)",
+      "Bash(\"C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe\" -u root -e \"CREATE DATABASE IF NOT EXISTS certificatedu CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; SHOW DATABASES;\")",
+      "Bash(npm uninstall:*)",
+      "Bash(node dist/main)",
+      "Bash(curl -s http://localhost:3000/api/courses)",
+      "Bash(npx nest:*)",
+      "Bash(node -e ':*)",
+      "Bash(curl -s http://localhost:3000/api/users/1/courses)",
+      "Bash(npx kill-port:*)",
+      "Bash(curl -s http://localhost:3000/api/categories)"
+    ]
+  }
+}

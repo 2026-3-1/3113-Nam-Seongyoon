@@ -1,0 +1,13 @@
+{
+  "name": "certificatedu",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm --prefix P1/backend run start:dev\" \"npm --prefix P1/frontend run dev\"",
+    "dev:backend": "npm --prefix P1/backend run start:dev",
+    "dev:frontend": "npm --prefix P1/frontend run dev",
+    "build:backend": "npm --prefix P1/backend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
