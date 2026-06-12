@@ -1,0 +1,164 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { api, getAuth } from "../lib/api";
+import { getYouTubeEmbedUrl } from "../lib/media";
+import type { Course, CourseProgress } from "../types";
+import s from "../styles/pages.module.css";
+
+const emptyProgress: CourseProgress = {
+  completedCount: 0,
+  totalCount: 0,
+  progressPercent: 0,
+  lastChapterIndex: 0,
+};
+
+export default function LearnPage() {
+  const { id } = useParams();
+  const courseId = Number(id);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [progress, setProgress] = useState<CourseProgress>(emptyProgress);
+  const [message, setMessage] = useState("");
+  const auth = getAuth();
+
+  useEffect(() => {
+    api.course(courseId).then(setCourse).catch(() => setCourse(null));
+    if (!auth) return;
+
+    api
+      .courseProgress(courseId)
+      .then((data) => {
+        setProgress(data);
+        if (data.totalCount > 0) {
+          setActiveIndex(Math.min(data.lastChapterIndex, data.totalCount - 1));
+        }
+      })
+      .catch(() => undefined);
+  }, [auth?.accessToken, courseId]);
+
+  const curriculum = useMemo(() => course?.curriculum ?? [], [course]);
+
+  useEffect(() => {
+    if (!auth || !course || curriculum.length === 0) return;
+
+    const completedCount = activeIndex + 1;
+    api
+      .updateCourseProgress(course.id, completedCount)
+      .then(setProgress)
+      .catch((error) => setMessage(error instanceof Error ? error.message : "진행률을 저장하지 못했습니다."));
+  }, [activeIndex, auth, course, curriculum.length]);
+
+  if (!course) {
+    return (
+      <div className={s.learnWrap}>
+        <div className={s.emptyState}>
+          <div className={s.emptyTitle}>강의를 찾을 수 없습니다.</div>
+          <Link to="/courses" className={s.btnPrimary}>강의 목록으로</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const activeChapter = curriculum[activeIndex];
+  const embedUrl = activeChapter ? getYouTubeEmbedUrl(activeChapter.youtubeUrl) : "";
+
+  return (
+    <div className={s.learnWrap}>
+      <header className={s.learnHeader}>
+        <div className={s.learnHeaderLeft}>
+          <Link to={`/courses/${course.id}`} className={s.learnBackLink}>강의 소개</Link>
+          <span className={s.learnLogo}>CertificatEdu</span>
+        </div>
+        <span className={s.learnTitle}>{course.title}</span>
+        <div className={s.learnHeaderRight}>
+          <div className={s.progressWrap}>
+            <div className={s.progressTrack}>
+              <div className={s.progressFill} style={{ width: `${progress.progressPercent}%` }} />
+            </div>
+            <span className={s.progressPct}>{progress.progressPercent}%</span>
+          </div>
+        </div>
+      </header>
+
+      <div className={s.learnBody}>
+        <div className={s.videoArea}>
+          <div className={s.videoPlayer}>
+            {embedUrl ? (
+              <iframe
+                className={s.videoFrame}
+                src={embedUrl}
+                title={activeChapter.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            ) : (
+              <div className={s.videoPlaceholder}>
+                <div className={s.playBtn}>Play</div>
+                <p style={{ fontWeight: 700 }}>재생할 YouTube 영상이 없습니다.</p>
+                <p style={{ color: "var(--muted)" }}>선생님 관리 페이지에서 커리큘럼별 YouTube 링크를 등록해 주세요.</p>
+              </div>
+            )}
+          </div>
+
+          <div className={s.videoInfo}>
+            <div className={s.videoInfoTop}>
+              <div>
+                <p className={s.chapterIndexLabel}>Chapter {activeIndex + 1}</p>
+                <h1 className={s.videoTitle}>{activeChapter?.title ?? "커리큘럼 없음"}</h1>
+                {message && <p className={s.formError}>{message}</p>}
+                {!auth && <p className={s.formError}>로그인하면 학습 진행률이 저장되고 70% 이상 수강 후 리뷰를 작성할 수 있습니다.</p>}
+              </div>
+              {curriculum.length > 1 && (
+                <button
+                  className={s.btnNext}
+                  onClick={() => setActiveIndex((index) => Math.min(index + 1, curriculum.length - 1))}
+                  disabled={activeIndex >= curriculum.length - 1}
+                >
+                  다음 강의
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <aside className={s.sidebar}>
+          <div className={s.sidebarHead}>
+            <p className={s.sidebarTitle}>커리큘럼</p>
+            <div className={s.sidebarProgress}>
+              <div className={s.progressTrack}>
+                <div className={s.progressFill} style={{ width: `${progress.progressPercent}%` }} />
+              </div>
+              <span className={s.progressPct}>{progress.completedCount} / {curriculum.length}</span>
+            </div>
+          </div>
+          <div className={s.sidebarScroll}>
+            {curriculum.length === 0 ? (
+              <div className={s.reviewItem}>등록된 커리큘럼이 없습니다.</div>
+            ) : (
+              curriculum.map((chapter, index) => {
+                const isCompleted = index < progress.completedCount;
+                return (
+                  <button
+                    key={`${chapter.title}-${index}`}
+                    onClick={() => setActiveIndex(index)}
+                    className={`${s.sidebarItem} ${index === activeIndex ? s.sidebarItemActive : ""}`}
+                  >
+                    <span className={`${s.sidebarBullet} ${isCompleted ? s.bulletCompleted : index === activeIndex ? s.bulletActive : s.bulletDefault}`}>
+                      {isCompleted ? "OK" : index + 1}
+                    </span>
+                    <span className={s.sidebarChapterText}>
+                      <span className={s.sidebarChapterTitleWrap}>
+                        <span className={`${s.sidebarChapterTitle} ${index === activeIndex ? s.sidebarChapterTitleActive : ""}`}>{chapter.title}</span>
+                      </span>
+                      <span className={s.sidebarChapterDur}>YouTube</span>
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}

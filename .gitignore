@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.tools/
+
+*.log
+*.err.log
+
+.env
+*.sqlite
+*.sqlite3
+
+coverage/
+.DS_Store

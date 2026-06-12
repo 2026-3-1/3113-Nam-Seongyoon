@@ -1,0 +1,132 @@
+openapi: "3.0.3"
+info:
+  title: CertificatEdu API — P2 (인증+권한)
+  version: "2.0"
+  description: JWT 인증 및 RBAC 적용 API 명세
+
+servers:
+  - url: http://localhost:3000/api
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthState:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        user:
+          type: object
+          properties:
+            id: { type: integer }
+            email: { type: string }
+            name: { type: string }
+            role: { type: string, enum: [STUDENT, TEACHER, ADMIN] }
+
+paths:
+  /auth/register:
+    post:
+      summary: 회원가입
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name, role]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                name: { type: string }
+                role: { type: string, enum: [STUDENT, TEACHER] }
+      responses:
+        "201":
+          description: 가입된 유저 정보
+        "409":
+          description: 이메일 중복
+
+  /auth/login:
+    post:
+      summary: 로그인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: 토큰 발급
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthState" }
+        "401":
+          description: 인증 실패
+
+  /auth/refresh:
+    post:
+      summary: 토큰 갱신
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: 새 토큰 발급
+
+  /auth/logout:
+    post:
+      summary: 로그아웃
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 로그아웃 성공
+
+  /users/me/mypage:
+    get:
+      summary: 마이페이지 정보
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 마이페이지 데이터
+        "401":
+          description: 미인증
+
+  /courses:
+    post:
+      summary: 강의 등록 (TEACHER only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, category, description, thumbnail, price]
+              properties:
+                title: { type: string }
+                category: { type: string }
+                description: { type: string }
+                thumbnail: { type: string }
+                price: { type: integer }
+      responses:
+        "201":
+          description: 생성된 강의
+        "403":
+          description: 권한 없음 (STUDENT 시도)

@@ -1,0 +1,68 @@
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TerminusModule } from '@nestjs/terminus';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth.module';
+import { BookmarkModule } from './bookmark.module';
+import { CartModule } from './cart.module';
+import { CourseModule } from './course.module';
+import { NotificationModule } from './notification/notification.module';
+import { OrderModule } from './order.module';
+import { ProgressModule } from './progress.module';
+import { ReviewModule } from './review.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
+import { UserModule } from './user.module';
+
+@Module({
+  controllers: [AppController],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const dbType = config.get<string>('DB_TYPE', 'sqlite');
+        const sync = config.get('DB_SYNC', 'true') === 'true';
+        const logging = config.get('NODE_ENV') === 'development';
+        if (dbType === 'mysql') {
+          return {
+            type: 'mysql',
+            host: config.get('DB_HOST', 'localhost'),
+            port: Number(config.get('DB_PORT', '3306')),
+            username: config.get('DB_USER', 'certificatedu'),
+            password: config.get('DB_PASSWORD', 'certificatedu_pass'),
+            database: config.get('DB_DATABASE', 'certificatedu'),
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: sync,
+            logging,
+            charset: 'utf8mb4',
+          } as const;
+        }
+        return {
+          type: 'sqlite',
+          database: config.get('DB_DATABASE', 'certificatedu.sqlite'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: sync,
+          logging,
+        } as const;
+      },
+    }),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    TerminusModule,
+    ScheduleModule.forRoot(),
+    UserModule,
+    AuthModule,
+    CourseModule,
+    BookmarkModule,
+    CartModule,
+    OrderModule,
+    ProgressModule,
+    ReviewModule,
+    NotificationModule,
+    SchedulerModule,
+  ],
+})
+export class AppModule {}
