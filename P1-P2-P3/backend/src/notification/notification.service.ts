@@ -28,19 +28,30 @@ export class NotificationService {
     });
   }
 
-  async sendMail(options: MailOptions): Promise<boolean> {
+  async sendMail(options: MailOptions, maxRetries = 3): Promise<boolean> {
     if (!this.config.get('MAIL_USER')) {
       this.logger.warn(`[MAIL SKIP] MAIL_USER 미설정 — to: ${options.to}, subject: ${options.subject}`);
       return false;
     }
-    try {
-      await this.transporter.sendMail({ from: this.from, ...options });
-      this.logger.log(`[MAIL SENT] to: ${options.to}, subject: ${options.subject}`);
-      return true;
-    } catch (err) {
-      this.logger.error(`[MAIL ERROR] ${(err as Error).message}`);
-      return false;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.transporter.sendMail({ from: this.from, ...options });
+        this.logger.log(`[MAIL SENT] to: ${options.to}, subject: ${options.subject}`);
+        return true;
+      } catch (err) {
+        const msg = (err as Error).message;
+        if (attempt === maxRetries) {
+          this.logger.error(`[MAIL ERROR] 최종 실패 (${attempt}/${maxRetries}) — ${msg}`);
+          return false;
+        }
+        // Exponential Backoff: 200ms → 400ms → 800ms
+        const delay = 200 * 2 ** (attempt - 1);
+        this.logger.warn(`[MAIL RETRY] ${attempt}/${maxRetries} — ${delay}ms 후 재시도 — ${msg}`);
+        await new Promise((r) => setTimeout(r, delay));
+      }
     }
+    return false;
   }
 
   sendPurchaseConfirm(to: string, userName: string, courseTitle: string, price: number) {

@@ -25,8 +25,11 @@ import { UserModule } from './user.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const dbType = config.get<string>('DB_TYPE', 'sqlite');
-        const sync = config.get('DB_SYNC', 'true') === 'true';
-        const logging = config.get('NODE_ENV') === 'development';
+        const isProd = config.get('NODE_ENV') === 'production';
+        // production: synchronize=false + 마이그레이션 자동 실행
+        // development/test: 환경변수 DB_SYNC 로 제어 (기본 true)
+        const sync = isProd ? false : config.get('DB_SYNC', 'true') === 'true';
+        const logging = !isProd;
         if (dbType === 'mysql') {
           return {
             type: 'mysql',
@@ -36,6 +39,8 @@ import { UserModule } from './user.module';
             password: config.get('DB_PASSWORD', 'certificatedu_pass'),
             database: config.get('DB_DATABASE', 'certificatedu'),
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            migrations: [__dirname + '/migrations/*{.ts,.js}'],
+            migrationsRun: isProd,
             synchronize: sync,
             logging,
             charset: 'utf8mb4',
@@ -45,6 +50,8 @@ import { UserModule } from './user.module';
           type: 'sqlite',
           database: config.get('DB_DATABASE', 'certificatedu.sqlite'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          migrations: [__dirname + '/migrations/*{.ts,.js}'],
+          migrationsRun: isProd,
           synchronize: sync,
           logging,
         } as const;

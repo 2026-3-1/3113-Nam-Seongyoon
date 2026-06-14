@@ -1,22 +1,37 @@
+import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
+  let healthService: jest.Mocked<Pick<HealthCheckService, 'check'>>;
+  let dbIndicator: jest.Mocked<Pick<TypeOrmHealthIndicator, 'pingCheck'>>;
 
   beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+    healthService = {
+      check: jest.fn().mockResolvedValue({ status: 'ok', info: { database: { status: 'up' } } }),
+    };
+    dbIndicator = {
+      pingCheck: jest.fn().mockResolvedValue({ database: { status: 'up' } }),
+    };
+
+    const module: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        { provide: HealthCheckService, useValue: healthService },
+        { provide: TypeOrmHealthIndicator, useValue: dbIndicator },
+      ],
     }).compile();
 
-    appController = app.get<AppController>(AppController);
+    appController = module.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('GET /health', () => {
+    it('헬스체크 결과를 반환한다', async () => {
+      const result = await appController.check();
+
+      expect(healthService.check).toHaveBeenCalled();
+      expect(result).toEqual(expect.objectContaining({ status: 'ok' }));
     });
   });
 });
