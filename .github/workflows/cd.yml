@@ -72,12 +72,13 @@ jobs:
               sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
             fi
 
-            # 레포 clone 또는 pull
+            # 레포 clone 또는 강제 동기화
             export GIT_TERMINAL_PROMPT=0
             if [ ! -d "$HOME/certificatedu/.git" ]; then
               git clone https://github.com/2026-3-1/3113-Nam-Seongyoon.git $HOME/certificatedu
             else
-              git -C $HOME/certificatedu pull origin master
+              git -C $HOME/certificatedu fetch origin
+              git -C $HOME/certificatedu reset --hard origin/master
             fi
 
             echo "=== 클론 결과 확인 ==="
