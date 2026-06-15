@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CourseProgress } from '../entities/course-progress.entity';
 import { Course } from '../entities/course.entity';
 import { JobLog, JobStatus } from '../entities/job-log.entity';
 import { NotificationService } from '../notification/notification.service';
@@ -36,6 +37,10 @@ describe('SchedulerService — 배치 통합 테스트', () => {
   let courseRepo: {
     find: jest.Mock;
     count: jest.Mock;
+    update: jest.Mock;
+  };
+  let progressRepo: {
+    createQueryBuilder: jest.Mock;
   };
   let notificationService: { sendDailyDigest: jest.Mock };
 
@@ -48,7 +53,17 @@ describe('SchedulerService — 배치 통합 테스트', () => {
     courseRepo = {
       find: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(0),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
+    const qb = {
+      innerJoin: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    };
+    progressRepo = { createQueryBuilder: jest.fn().mockReturnValue(qb) };
     notificationService = {
       sendDailyDigest: jest.fn().mockResolvedValue(true),
     };
@@ -58,6 +73,7 @@ describe('SchedulerService — 배치 통합 테스트', () => {
         SchedulerService,
         { provide: getRepositoryToken(JobLog), useValue: jobLogRepo },
         { provide: getRepositoryToken(Course), useValue: courseRepo },
+        { provide: getRepositoryToken(CourseProgress), useValue: progressRepo },
         { provide: NotificationService, useValue: notificationService },
       ],
     }).compile();
