@@ -445,6 +445,9 @@
 .instrSuccessTitle { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; margin-bottom:1rem; }
 .instrSuccessDesc { color:var(--muted); line-height:1.65; margin-bottom:2rem; }
 
+/* ── 유효성 검사 에러 ── */
+.inputError { border-color: #ef4444 !important; box-shadow: 0 0 0 1px #ef4444; }
+
 /* ── 파일 업로드 버튼 ── */
 .uploadBtn {
   display:inline-flex; align-items:center; gap:6px; cursor:pointer;

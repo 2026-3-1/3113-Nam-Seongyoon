@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Course } from '../entities/course.entity';
+import { CourseProgress } from '../entities/course-progress.entity';
 import { JobLog } from '../entities/job-log.entity';
 import { NotificationModule } from '../notification/notification.module';
 import { SchedulerController } from './scheduler.controller';
 import { SchedulerService } from './scheduler.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([JobLog, Course]), NotificationModule],
+  imports: [TypeOrmModule.forFeature([JobLog, Course, CourseProgress]), NotificationModule],
   controllers: [SchedulerController],
   providers: [SchedulerService],
   exports: [SchedulerService],

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, getAuth } from "../lib/api";
 import type { Course, CourseProgress } from "../types";
@@ -19,6 +19,7 @@ export default function LearnPage() {
   const [progress, setProgress] = useState<CourseProgress>(emptyProgress);
   const [message, setMessage] = useState("");
   const auth = getAuth();
+  const markedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     api.course(courseId).then(setCourse).catch(() => setCourse(null));
@@ -37,15 +38,31 @@ export default function LearnPage() {
 
   const curriculum = useMemo(() => course?.curriculum ?? [], [course]);
 
-  useEffect(() => {
-    if (!auth || !course || curriculum.length === 0) return;
+  const markComplete = useCallback(async (chapterIndex: number) => {
+    if (!auth || !course) return;
+    if (markedRef.current.has(chapterIndex)) return;
+    markedRef.current.add(chapterIndex);
+    try {
+      const updated = await api.updateCourseProgress(course.id, chapterIndex + 1);
+      setProgress(updated);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "진행률을 저장하지 못했습니다.");
+    }
+  }, [auth, course]);
 
-    const completedCount = activeIndex + 1;
-    api
-      .updateCourseProgress(course.id, completedCount)
-      .then(setProgress)
-      .catch((error) => setMessage(error instanceof Error ? error.message : "진행률을 저장하지 못했습니다."));
-  }, [activeIndex, auth, course, curriculum.length]);
+  const handleTimeUpdate = useCallback((e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const v = e.currentTarget;
+    if (v.duration && v.currentTime / v.duration >= 0.8) {
+      void markComplete(activeIndex);
+    }
+  }, [activeIndex, markComplete]);
+
+  const handleEnded = useCallback(async () => {
+    await markComplete(activeIndex);
+    if (activeIndex < curriculum.length - 1) {
+      setTimeout(() => setActiveIndex((i) => i + 1), 1200);
+    }
+  }, [activeIndex, curriculum.length, markComplete]);
 
   if (!course) {
     return (
@@ -87,6 +104,8 @@ export default function LearnPage() {
                 className={s.videoFrame}
                 controls
                 src={activeChapter.videoUrl}
+                onTimeUpdate={handleTimeUpdate}
+                onEnded={() => { void handleEnded(); }}
               />
             ) : (
               <div className={s.videoPlaceholder}>

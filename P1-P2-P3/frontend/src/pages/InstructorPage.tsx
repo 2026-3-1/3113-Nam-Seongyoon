@@ -67,6 +67,7 @@ export default function InstructorPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [errors, setErrors] = useState<Set<string>>(new Set());
   const isTeacher = auth?.user.role === "TEACHER" || auth?.user.role === "ADMIN";
 
   useEffect(() => {
@@ -79,8 +80,11 @@ export default function InstructorPage() {
   }, [auth?.user.id, auth?.user.role, courses]);
 
   const set = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const value = key === "price" || key === "originalPrice" ? Number(event.target.value) : event.target.value;
+    const value = key === "price" || key === "originalPrice"
+      ? (event.target.value === "" ? 0 : Number(event.target.value))
+      : event.target.value;
     setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => { const next = new Set(prev); next.delete(key); return next; });
   };
 
   const setCurriculum = (index: number, key: keyof CurriculumItem, value: string) => {
@@ -152,6 +156,8 @@ export default function InstructorPage() {
   const reset = () => {
     setForm({ ...emptyForm, curriculum: [{ ...blankCurriculumItem }] });
     setEditingId(null);
+    setErrors(new Set());
+    setMessage("");
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -160,18 +166,22 @@ export default function InstructorPage() {
       setMessage("선생님 또는 관리자 계정으로 로그인해야 강의를 등록할 수 있습니다.");
       return;
     }
-    if (!form.title || !form.description || form.price < 0) {
-      setMessage("강의명, 소개, 가격을 확인해 주세요.");
+
+    const newErrors = new Set<string>();
+    if (!form.title.trim()) newErrors.add("title");
+    if (!form.description.trim()) newErrors.add("description");
+    if (form.price < 0) newErrors.add("price");
+    if (!form.thumbnail) newErrors.add("thumbnail");
+    const validCurriculum = form.curriculum.filter((c) => c.title.trim() && c.videoUrl.trim());
+    if (validCurriculum.length === 0) newErrors.add("curriculum");
+    if (form.originalPrice > 0 && form.price > form.originalPrice) newErrors.add("originalPrice");
+
+    if (newErrors.size > 0) {
+      setErrors(newErrors);
+      setMessage("필수 항목을 모두 입력해 주세요.");
       return;
     }
-    if (form.originalPrice > 0 && form.price > form.originalPrice) {
-      setMessage("판매가는 정가보다 클 수 없습니다.");
-      return;
-    }
-    if (!form.thumbnail) {
-      setMessage("강의 썸네일 사진을 업로드해 주세요.");
-      return;
-    }
+    setErrors(new Set());
 
     const curriculum = form.curriculum
       .map((item) => ({ title: item.title.trim(), videoUrl: item.videoUrl.trim() }))
@@ -180,7 +190,7 @@ export default function InstructorPage() {
     const payload = {
       ...form,
       originalPrice: form.originalPrice || undefined,
-      tag: form.tag || undefined,
+      tag: undefined,
       duration: `총 ${curriculum.length}강`,
       curriculum,
     };
@@ -251,7 +261,7 @@ export default function InstructorPage() {
             <div className={s.instrFormGrid}>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>강의명</label>
-                <input className={s.formInput} value={form.title} onChange={set("title")} placeholder="정보처리기사 실전반" />
+                <input className={`${s.formInput} ${errors.has("title") ? s.inputError : ""}`} value={form.title} onChange={set("title")} placeholder="정보처리기사 실전반" />
               </div>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>카테고리</label>
@@ -266,11 +276,23 @@ export default function InstructorPage() {
             <div className={s.instrFormGrid}>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>가격</label>
-                <input className={s.formInput} type="number" value={form.price} onChange={set("price")} />
+                <input
+                  className={`${s.formInput} ${errors.has("price") ? s.inputError : ""}`}
+                  type="number"
+                  value={form.price || ""}
+                  placeholder="0"
+                  onChange={set("price")}
+                />
               </div>
               <div className={s.formGroup}>
-                <label className={s.formLabel}>정가</label>
-                <input className={s.formInput} type="number" value={form.originalPrice} onChange={set("originalPrice")} />
+                <label className={s.formLabel}>정가 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택)</span></label>
+                <input
+                  className={`${s.formInput} ${errors.has("originalPrice") ? s.inputError : ""}`}
+                  type="number"
+                  value={form.originalPrice || ""}
+                  placeholder="할인 전 가격"
+                  onChange={set("originalPrice")}
+                />
               </div>
             </div>
 
@@ -283,7 +305,7 @@ export default function InstructorPage() {
                   <input type="file" accept="image/*" onChange={readThumbnail} style={{ display: "none" }} />
                 </label>
               </div>
-              <div className={s.thumbPreview}>
+              <div className={`${s.thumbPreview} ${errors.has("thumbnail") ? s.inputError : ""}`}>
                 {isImageSource(form.thumbnail) ? (
                   <img src={form.thumbnail} alt="" className={s.thumbImage} />
                 ) : (
@@ -295,25 +317,19 @@ export default function InstructorPage() {
               </div>
             </div>
 
-            <div className={s.instrFormGrid}>
-              <div className={s.formGroup}>
-                <label className={s.formLabel}>배지</label>
-                <input className={s.formInput} value={form.badge} onChange={set("badge")} />
-              </div>
-              <div className={s.formGroup}>
-                <label className={s.formLabel}>태그</label>
-                <input className={s.formInput} value={form.tag} onChange={set("tag")} placeholder="BEST, NEW, HOT" />
-              </div>
+            <div className={s.formGroup}>
+              <label className={s.formLabel}>태그 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(강사 자격 표시)</span></label>
+              <input className={s.formInput} value={form.badge} onChange={set("badge")} placeholder="인증 강사, 업계 전문가..." />
             </div>
 
             <div className={s.formGroup}>
               <label className={s.formLabel}>강의 소개</label>
-              <textarea className={s.instrTextarea} rows={4} value={form.description} onChange={set("description")} />
+              <textarea className={`${s.instrTextarea} ${errors.has("description") ? s.inputError : ""}`} rows={4} value={form.description} onChange={set("description")} />
             </div>
 
             <div className={s.formGroup}>
-              <label className={s.formLabel}>커리큘럼</label>
-              <div className={s.curriculumEditor}>
+              <label className={s.formLabel}>커리큘럼 {errors.has("curriculum") && <span style={{ color: "#ef4444", fontWeight: 400 }}>— 제목과 영상이 모두 있는 강의가 1개 이상 필요합니다</span>}</label>
+              <div className={`${s.curriculumEditor} ${errors.has("curriculum") ? s.inputError : ""}`} style={{ padding: errors.has("curriculum") ? "0.5rem" : undefined, borderRadius: errors.has("curriculum") ? "var(--radius-sm)" : undefined }}>
                 {form.curriculum.map((item, index) => (
                   <div key={index} className={s.curriculumRow}>
                     <input
