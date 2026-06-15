@@ -80,6 +80,9 @@ jobs:
               git -C $HOME/certificatedu pull origin master
             fi
 
+            echo "=== 클론 결과 확인 ==="
+            ls -la $HOME/certificatedu/
+
             cd $HOME/certificatedu/P1-P2-P3
 
             export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
