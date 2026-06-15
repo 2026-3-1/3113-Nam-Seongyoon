@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CourseService } from './course.service';
 import { Course } from './entities/course.entity';
+import { OrderItem } from './entities/order-item.entity';
 import { User, UserRole } from './entities/user.entity';
 import { UserProfile } from './entities/user-profile.entity';
 import { UserService } from './user.service';
@@ -76,6 +77,7 @@ describe('CourseService', () => {
       providers: [
         CourseService,
         { provide: getRepositoryToken(Course), useValue: courseRepo },
+        { provide: getRepositoryToken(OrderItem), useValue: { findOne: jest.fn().mockResolvedValue(null) } },
         {
           provide: UserService,
           useValue: { findOne: jest.fn().mockResolvedValue(mockTeacher) },

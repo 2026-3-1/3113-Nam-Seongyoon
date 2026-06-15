@@ -11,6 +11,7 @@ import { Repository } from 'typeorm';
 import type { CurrentUser } from './auth/current-user.decorator';
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto';
 import { Course } from './entities/course.entity';
+import { OrderItem } from './entities/order-item.entity';
 import { UserRole } from './entities/user.entity';
 import { UserService } from './user.service';
 
@@ -21,6 +22,8 @@ export class CourseService {
   constructor(
     @InjectRepository(Course)
     private readonly courses: Repository<Course>,
+    @InjectRepository(OrderItem)
+    private readonly orderItems: Repository<OrderItem>,
     private readonly users: UserService,
   ) {}
 
@@ -84,13 +87,31 @@ export class CourseService {
     };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, currentUser?: CurrentUser) {
     const course = await this.courses.findOne({
       where: { id },
       relations: { reviews: true },
       order: { reviews: { createdAt: 'DESC' } },
     });
     if (!course) throw new NotFoundException('강의를 찾을 수 없습니다.');
+
+    let hasPurchased = false;
+    if (currentUser) {
+      if (
+        currentUser.role === UserRole.ADMIN ||
+        course.teacher?.id === currentUser.id
+      ) {
+        hasPurchased = true;
+      } else {
+        const item = await this.orderItems.findOne({
+          where: {
+            course: { id },
+            order: { user: { id: currentUser.id }, status: 'PAID' },
+          },
+        });
+        hasPurchased = !!item;
+      }
+    }
 
     const reviews = course.reviews ?? [];
     const rating =
@@ -102,6 +123,7 @@ export class CourseService {
       course,
       Number(rating.toFixed(1)),
       reviews.length,
+      hasPurchased,
     );
   }
 
@@ -168,7 +190,11 @@ export class CourseService {
     }
   }
 
-  private serializeCourse(course: Course, rating: number, reviewCount: number) {
+  private serializeCourse(course: Course, rating: number, reviewCount: number, hasPurchased = false) {
+    const curriculum = (course.curriculum ?? []).map((item) => ({
+      ...item,
+      videoUrl: hasPurchased || item.isPreview ? item.videoUrl : '',
+    }));
     return {
       ...course,
       reviews: undefined,
@@ -183,7 +209,8 @@ export class CourseService {
       rating,
       reviewCount,
       duration: this.resolveDuration(course.duration, course.curriculum ?? []),
-      curriculum: course.curriculum ?? [],
+      curriculum,
+      hasPurchased,
     };
   }
 

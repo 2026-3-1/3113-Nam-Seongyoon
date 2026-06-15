@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, getAuth } from "../lib/api";
-import type { Course, CourseProgress } from "../types";
+import type { Course, CourseProgress, CurriculumItem } from "../types";
 import s from "../styles/pages.module.css";
 
 const emptyProgress: CourseProgress = {
@@ -37,6 +37,8 @@ export default function LearnPage() {
   }, [auth?.accessToken, courseId]);
 
   const curriculum = useMemo(() => course?.curriculum ?? [], [course]);
+  const hasPurchased = course?.hasPurchased ?? false;
+  const isAccessible = (chapter: CurriculumItem) => hasPurchased || (chapter.isPreview ?? false);
 
   const markComplete = useCallback(async (chapterIndex: number) => {
     if (!auth || !course) return;
@@ -98,7 +100,13 @@ export default function LearnPage() {
       <div className={s.learnBody}>
         <div className={s.videoArea}>
           <div className={s.videoPlayer}>
-            {activeChapter?.videoUrl ? (
+            {activeChapter && !isAccessible(activeChapter) ? (
+              <div className={s.videoPlaceholder}>
+                <div className={s.playBtn}>🔒</div>
+                <p style={{ fontWeight: 700 }}>구매 후 수강할 수 있습니다.</p>
+                <Link to={`/courses/${course.id}`} className={s.btnPrimary} style={{ marginTop: "1rem" }}>강의 구매하기</Link>
+              </div>
+            ) : activeChapter?.videoUrl ? (
               <video
                 key={activeChapter.videoUrl}
                 className={s.videoFrame}
@@ -153,6 +161,7 @@ export default function LearnPage() {
             ) : (
               curriculum.map((chapter, index) => {
                 const isCompleted = index < progress.completedCount;
+                const accessible = isAccessible(chapter);
                 return (
                   <button
                     key={`${chapter.title}-${index}`}
@@ -165,8 +174,9 @@ export default function LearnPage() {
                     <span className={s.sidebarChapterText}>
                       <span className={s.sidebarChapterTitleWrap}>
                         <span className={`${s.sidebarChapterTitle} ${index === activeIndex ? s.sidebarChapterTitleActive : ""}`}>{chapter.title}</span>
+                        {chapter.isPreview && <span style={{ fontSize: "0.68rem", background: "var(--accent)", color: "#fff", padding: "0.1em 0.35em", borderRadius: "0.2em", marginLeft: "0.3rem" }}>미리보기</span>}
                       </span>
-                      <span className={s.sidebarChapterDur}>MP4</span>
+                      <span className={s.sidebarChapterDur}>{accessible ? "MP4" : "🔒"}</span>
                     </span>
                   </button>
                 );

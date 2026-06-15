@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser as CurrentUserDecorator } from './auth/current-user.decorator';
 import type { CurrentUser } from './auth/current-user.decorator';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './auth/optional-jwt-auth.guard';
 import { Roles } from './auth/roles.decorator';
 import { RolesGuard } from './auth/roles.guard';
 import { CourseService } from './course.service';
@@ -33,8 +34,12 @@ export class CourseController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.courses.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUserDecorator() user: CurrentUser | null,
+  ) {
+    return this.courses.findOne(id, user ?? undefined);
   }
 
   @Post()

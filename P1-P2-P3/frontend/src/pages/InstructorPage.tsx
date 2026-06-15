@@ -9,6 +9,7 @@ import s from "../styles/pages.module.css";
 const blankCurriculumItem: CurriculumItem = {
   title: "",
   videoUrl: "",
+  isPreview: false,
 };
 
 const THUMBNAIL_MAX_SIZE = 1280;
@@ -106,6 +107,15 @@ export default function InstructorPage() {
     }));
   };
 
+  const togglePreview = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      curriculum: prev.curriculum.map((item, itemIndex) => (
+        itemIndex === index ? { ...item, isPreview: !item.isPreview } : item
+      )),
+    }));
+  };
+
   const addCurriculum = () => {
     setForm((prev) => ({
       ...prev,
@@ -196,7 +206,7 @@ export default function InstructorPage() {
         }
       } else {
         targets.push(curr.length);
-        curr.push({ title: file.name.replace(/\.[^/.]+$/, ""), videoUrl: "" });
+        curr.push({ title: file.name.replace(/\.[^/.]+$/, ""), videoUrl: "", isPreview: false });
       }
     }
 
@@ -235,7 +245,7 @@ export default function InstructorPage() {
     setErrors(new Set());
 
     const curriculum = form.curriculum
-      .map((item) => ({ title: item.title.trim(), videoUrl: item.videoUrl.trim() }))
+      .map((item) => ({ title: item.title.trim(), videoUrl: item.videoUrl.trim(), isPreview: item.isPreview ?? false }))
       .filter((item) => item.title && item.videoUrl);
 
     const payload = {
@@ -275,7 +285,9 @@ export default function InstructorPage() {
       duration: course.duration,
       tag: course.tag ?? "",
       isPublished: course.isPublished ?? true,
-      curriculum: course.curriculum?.length ? course.curriculum : [{ ...blankCurriculumItem }],
+      curriculum: course.curriculum?.length
+        ? course.curriculum.map((item) => ({ ...blankCurriculumItem, ...item }))
+        : [{ ...blankCurriculumItem }],
     });
   };
 
@@ -431,6 +443,15 @@ export default function InstructorPage() {
                         <span className={s.videoFileName}>✓ {item.videoUrl.split("/").pop()}</span>
                       )}
                     </div>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", whiteSpace: "nowrap", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={item.isPreview ?? false}
+                        onChange={() => togglePreview(index)}
+                        style={{ cursor: "pointer" }}
+                      />
+                      무료 미리보기
+                    </label>
                     <button type="button" className={s.smallDangerBtn} onClick={() => removeCurriculum(index)}>삭제</button>
                   </div>
                 ))}

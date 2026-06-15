@@ -15,6 +15,10 @@ export class CurriculumItemDto {
 
   @IsString()
   videoUrl: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPreview?: boolean;
 }
 
 export class CreateCourseDto {

@@ -30,6 +30,7 @@ export interface Course {
   teacher?: AuthUser | null;
   curriculum?: CurriculumItem[];
   progress?: CourseProgress;
+  hasPurchased?: boolean;
 }
 
 export interface CartItem {
@@ -70,6 +71,7 @@ export interface Order {
 export interface CurriculumItem {
   title: string;
   videoUrl: string;
+  isPreview?: boolean;
 }
 
 export interface Review {

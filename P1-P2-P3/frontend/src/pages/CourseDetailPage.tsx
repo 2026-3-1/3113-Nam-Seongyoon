@@ -206,8 +206,13 @@ export default function CourseDetailPage() {
                       <span className={s.chapterNum}>{String(index + 1).padStart(2, "0")}</span>
                       <span className={s.chapterPlay}>Play</span>
                       <span className={s.chapterTitle}>{chapter.title}</span>
+                      {chapter.isPreview && (
+                        <span style={{ fontSize: "0.7rem", background: "var(--accent)", color: "#fff", padding: "0.1em 0.4em", borderRadius: "0.25em", marginLeft: "0.4rem" }}>
+                          무료 미리보기
+                        </span>
+                      )}
                     </div>
-                    <span className={s.chapterDur}>YouTube</span>
+                    <span className={s.chapterDur}>{chapter.isPreview ? "미리보기" : "MP4"}</span>
                   </div>
                 ))
               )}

@@ -46,6 +46,7 @@ export class Course {
   curriculum: Array<{
     title: string;
     videoUrl: string;
+    isPreview?: boolean;
   }>;
 
   @Column({ default: true })
