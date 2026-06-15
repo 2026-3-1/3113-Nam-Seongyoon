@@ -24,7 +24,7 @@ export class Course {
   @Column({ type: 'text' })
   description: string;
 
-  @Column()
+  @Column({ type: 'text' })
   thumbnail: string;
 
   @Column({ type: 'int' })
