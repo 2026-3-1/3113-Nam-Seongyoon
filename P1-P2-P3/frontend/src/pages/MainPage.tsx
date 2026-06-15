@@ -38,13 +38,15 @@ export default function MainPage() {
     <div className={s.container}>
       <section style={{ padding: "4rem 0" }}>
         <span className={s.badge}>CertificatEdu</span>
-        <h1 className={s.pageTitle} style={{ fontSize: "3rem", maxWidth: 680 }}>
-          자격증 강의를 찾아보고 바로 학습을 시작하세요
+        <h1 className={s.pageTitle} style={{ fontSize: "2.75rem", maxWidth: 700, lineHeight: 1.25 }}>
+          배움에 투자한 시간은<br />
+          결코 낭비가 되지 않습니다.
         </h1>
-        <p className={s.pageSub} style={{ maxWidth: 620 }}>
-          학생 계정에서는 강의 탐색, 장바구니, 수강 진도 확인 흐름만 제공합니다.
+        <p className={s.pageSub} style={{ maxWidth: 580, marginTop: "1.25rem" }}>
+          IT·데이터·어학·디자인·경영까지,<br />
+          당신의 다음 커리어를 함께 준비하세요.
         </p>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem" }}>
           <Link to="/courses" className={s.btnPrimary}>강의 보러가기</Link>
           <Link to="/mypage" className={s.btnOutline}>내 진도 보기</Link>
         </div>

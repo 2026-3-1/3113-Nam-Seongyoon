@@ -285,12 +285,19 @@ export default function InstructorPage() {
                 />
               </div>
               <div className={s.formGroup}>
-                <label className={s.formLabel}>정가 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택)</span></label>
+                <label className={s.formLabel}>
+                  정가 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택)</span>
+                  {form.originalPrice > 0 && form.price > 0 && form.originalPrice > form.price && (
+                    <span style={{ marginLeft: "0.5rem", color: "#ef4444", fontWeight: 700 }}>
+                      {Math.round((1 - form.price / form.originalPrice) * 100)}% 할인
+                    </span>
+                  )}
+                </label>
                 <input
                   className={`${s.formInput} ${errors.has("originalPrice") ? s.inputError : ""}`}
                   type="number"
                   value={form.originalPrice || ""}
-                  placeholder="할인 전 가격"
+                  placeholder="할인 전 가격 (입력 시 할인율 자동 표시)"
                   onChange={set("originalPrice")}
                 />
               </div>
