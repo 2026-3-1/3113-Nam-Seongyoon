@@ -27,12 +27,13 @@ export class InitialSchema1700000000000 implements MigrationInterface {
 
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS \`user_profiles\` (
-        \`id\`        INT NOT NULL AUTO_INCREMENT,
-        \`bio\`       TEXT NULL,
-        \`avatarUrl\` VARCHAR(255) NULL,
-        \`userId\`    INT NOT NULL,
-        \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`id\`              INT NOT NULL AUTO_INCREMENT,
+        \`enrolledCount\`   INT NOT NULL DEFAULT 0,
+        \`completedCount\`  INT NOT NULL DEFAULT 0,
+        \`progressPercent\` INT NOT NULL DEFAULT 0,
+        \`userId\`          INT NOT NULL,
+        \`createdAt\`       DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updatedAt\`       DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
         PRIMARY KEY (\`id\`),
         UNIQUE KEY \`UQ_user_profiles_userId\` (\`userId\`),
         CONSTRAINT \`FK_user_profiles_userId\` FOREIGN KEY (\`userId\`) REFERENCES \`users\` (\`id\`) ON DELETE CASCADE
@@ -69,7 +70,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS \`reviews\` (
         \`id\`        INT NOT NULL AUTO_INCREMENT,
         \`rating\`    INT NOT NULL,
-        \`comment\`   TEXT NULL,
+        \`content\`   TEXT NOT NULL,
         \`userId\`    INT NOT NULL,
         \`courseId\`  INT NOT NULL,
         \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -115,7 +116,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS \`order_items\` (
         \`id\`       INT NOT NULL AUTO_INCREMENT,
         \`price\`    INT NOT NULL,
-        \`orderId\`  INT NULL,
+        \`orderId\`  INT NOT NULL,
         \`courseId\` INT NULL,
         PRIMARY KEY (\`id\`),
         KEY \`IDX_order_items_orderId\` (\`orderId\`),
@@ -123,6 +124,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
         CONSTRAINT \`FK_order_items_courseId\` FOREIGN KEY (\`courseId\`) REFERENCES \`courses\` (\`id\`) ON DELETE SET NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+
 
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS \`payments\` (
@@ -147,15 +149,16 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS \`course_progress\` (
-        \`id\`              INT NOT NULL AUTO_INCREMENT,
-        \`lessonIndex\`     INT NOT NULL DEFAULT 0,
-        \`completedLessons\` TEXT NOT NULL,
-        \`lastWatchedAt\`   DATETIME NULL,
-        \`userId\`          INT NOT NULL,
-        \`courseId\`        INT NOT NULL,
-        \`createdAt\`       DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\`       DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+      CREATE TABLE IF NOT EXISTS \`course_progresses\` (
+        \`id\`               INT NOT NULL AUTO_INCREMENT,
+        \`completedCount\`   INT NOT NULL DEFAULT 0,
+        \`totalCount\`       INT NOT NULL DEFAULT 0,
+        \`progressPercent\`  INT NOT NULL DEFAULT 0,
+        \`lastChapterIndex\` INT NOT NULL DEFAULT 0,
+        \`userId\`           INT NOT NULL,
+        \`courseId\`         INT NOT NULL,
+        \`createdAt\`        DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updatedAt\`        DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
         PRIMARY KEY (\`id\`),
         UNIQUE KEY \`UQ_progress_user_course\` (\`userId\`, \`courseId\`),
         CONSTRAINT \`FK_progress_userId\`   FOREIGN KEY (\`userId\`)   REFERENCES \`users\`   (\`id\`) ON DELETE CASCADE,
@@ -194,7 +197,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
   async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS \`job_logs\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`bookmarks\``);
-    await queryRunner.query(`DROP TABLE IF EXISTS \`course_progress\``);
+    await queryRunner.query(`DROP TABLE IF EXISTS \`course_progresses\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`payments\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`order_items\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`orders\``);
