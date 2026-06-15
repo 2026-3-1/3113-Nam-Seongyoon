@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -39,8 +40,9 @@ export class CourseService {
         take: safeLimit,
       });
     } catch (err) {
-      this.logger.error('findAll 쿼리 실패', err instanceof Error ? err.stack : String(err));
-      throw err;
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error('findAll 쿼리 실패', err instanceof Error ? err.stack : msg);
+      throw new InternalServerErrorException(`[DB] ${msg}`);
     }
 
     // 리뷰 집계: 조회된 강의 ID 범위에서만 한 번에 가져오기
