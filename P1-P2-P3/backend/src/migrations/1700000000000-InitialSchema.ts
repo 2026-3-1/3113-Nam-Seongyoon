@@ -51,7 +51,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
         \`badge\`         VARCHAR(255) NOT NULL DEFAULT '인증 강사',
         \`duration\`      VARCHAR(255) NOT NULL DEFAULT '총 0강',
         \`tag\`           TEXT NULL,
-        \`curriculum\`    TEXT NOT NULL DEFAULT '[]',
+        \`curriculum\`    TEXT NOT NULL,
         \`isPublished\`   TINYINT NOT NULL DEFAULT 1,
         \`teacherId\`     INT NULL,
         \`createdAt\`     DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -150,7 +150,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS \`course_progress\` (
         \`id\`              INT NOT NULL AUTO_INCREMENT,
         \`lessonIndex\`     INT NOT NULL DEFAULT 0,
-        \`completedLessons\` TEXT NOT NULL DEFAULT '[]',
+        \`completedLessons\` TEXT NOT NULL,
         \`lastWatchedAt\`   DATETIME NULL,
         \`userId\`          INT NOT NULL,
         \`courseId\`        INT NOT NULL,
