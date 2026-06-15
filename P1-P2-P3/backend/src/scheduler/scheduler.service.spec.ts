@@ -42,7 +42,7 @@ describe('SchedulerService — 배치 통합 테스트', () => {
   beforeEach(async () => {
     jobLogRepo = {
       find: jest.fn().mockResolvedValue([]),
-      create: jest.fn().mockImplementation((dto) => dto),
+      create: jest.fn().mockImplementation((dto: Partial<JobLog>) => dto),
       save: jest.fn().mockResolvedValue({ id: 1 }),
     };
     courseRepo = {
@@ -73,12 +73,18 @@ describe('SchedulerService — 배치 통합 테스트', () => {
       await service.dailyDigest();
 
       expect(jobLogRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ jobName: 'daily-digest', status: JobStatus.SUCCESS }),
+        expect.objectContaining({
+          jobName: 'daily-digest',
+          status: JobStatus.SUCCESS,
+        }),
       );
     });
 
     it('신규 강의가 있으면 ADMIN_MAIL 환경변수가 설정된 경우 알림을 전송한다', async () => {
-      const courses = [makeCourse({ title: '신규 강의 A' }), makeCourse({ id: 2, title: '신규 강의 B' })];
+      const courses = [
+        makeCourse({ title: '신규 강의 A' }),
+        makeCourse({ id: 2, title: '신규 강의 B' }),
+      ];
       courseRepo.find.mockResolvedValue(courses);
       const originalEnv = process.env.ADMIN_MAIL;
       process.env.ADMIN_MAIL = 'admin@certificatedu.dev';
@@ -118,7 +124,10 @@ describe('SchedulerService — 배치 통합 테스트', () => {
       await expect(service.dailyDigest()).resolves.toBeUndefined();
 
       expect(jobLogRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: JobStatus.FAILED, message: 'DB connection lost' }),
+        expect.objectContaining({
+          status: JobStatus.FAILED,
+          message: 'DB connection lost',
+        }),
       );
     });
   });
@@ -130,9 +139,14 @@ describe('SchedulerService — 배치 통합 테스트', () => {
 
       await service.publishCheck();
 
-      expect(courseRepo.count).toHaveBeenCalledWith({ where: { isPublished: false } });
+      expect(courseRepo.count).toHaveBeenCalledWith({
+        where: { isPublished: false },
+      });
       expect(jobLogRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ jobName: 'publish-check', status: JobStatus.SUCCESS }),
+        expect.objectContaining({
+          jobName: 'publish-check',
+          status: JobStatus.SUCCESS,
+        }),
       );
     });
 
@@ -142,7 +156,10 @@ describe('SchedulerService — 배치 통합 테스트', () => {
       await expect(service.publishCheck()).resolves.toBeUndefined();
 
       expect(jobLogRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: JobStatus.FAILED, message: 'timeout' }),
+        expect.objectContaining({
+          status: JobStatus.FAILED,
+          message: 'timeout',
+        }),
       );
     });
   });
@@ -150,7 +167,9 @@ describe('SchedulerService — 배치 통합 테스트', () => {
   // ── getLogs ───────────────────────────────────────────────────
   describe('getLogs()', () => {
     it('최신순으로 최대 50개 로그를 반환한다', async () => {
-      const fakeLogs = [{ id: 1, jobName: 'daily-digest', status: JobStatus.SUCCESS }];
+      const fakeLogs = [
+        { id: 1, jobName: 'daily-digest', status: JobStatus.SUCCESS },
+      ];
       jobLogRepo.find.mockResolvedValue(fakeLogs);
 
       const result = await service.getLogs();

@@ -17,7 +17,10 @@ async function bootstrap() {
   }
 
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, { bodyParser: false, logger: ['log', 'warn', 'error'] });
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
+    logger: ['log', 'warn', 'error'],
+  });
 
   app.use(helmet());
   app.use(json({ limit: '10mb' }));
@@ -32,7 +35,9 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173').split(','),
+    origin: (
+      process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://127.0.0.1:5173'
+    ).split(','),
     credentials: true,
   });
 
@@ -40,7 +45,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('CertificatEdu API')
-    .setDescription('강의, 리뷰, JWT 인증과 역할 기반 권한 API — P1-P2-P3 완성본')
+    .setDescription(
+      '강의, 리뷰, JWT 인증과 역할 기반 권한 API — P1-P2-P3 완성본',
+    )
     .setVersion('3.0')
     .addBearerAuth()
     .build();
@@ -54,4 +61,4 @@ async function bootstrap() {
   logger.log(`Health check at http://localhost:${port}/health`);
 }
 
-bootstrap();
+void bootstrap();

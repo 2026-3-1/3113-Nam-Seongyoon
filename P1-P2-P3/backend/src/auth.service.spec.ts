@@ -4,10 +4,11 @@ import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
-import { UserRole } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
+import { UserProfile } from './entities/user-profile.entity';
 import { UserService } from './user.service';
 
-const mockUser = {
+const mockUser: User = {
   id: 1,
   email: 'test@example.com',
   name: '테스트',
@@ -17,14 +18,23 @@ const mockUser = {
   refreshTokenHash: null,
   courses: [],
   reviews: [],
-  profile: null as any,
+  profile: null as unknown as UserProfile,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let userService: jest.Mocked<Pick<UserService, 'create' | 'findByEmail' | 'findOne' | 'saveRefreshToken' | 'clearRefreshToken'>>;
+  let userService: jest.Mocked<
+    Pick<
+      UserService,
+      | 'create'
+      | 'findByEmail'
+      | 'findOne'
+      | 'saveRefreshToken'
+      | 'clearRefreshToken'
+    >
+  >;
   let jwtService: jest.Mocked<Pick<JwtService, 'sign' | 'verify'>>;
 
   beforeEach(async () => {
@@ -84,10 +94,16 @@ describe('AuthService', () => {
     });
 
     it('중복 이메일이면 ConflictException을 전파한다', async () => {
-      (userService.create as jest.Mock).mockRejectedValue(new ConflictException('이미 사용 중인 이메일입니다.'));
+      (userService.create as jest.Mock).mockRejectedValue(
+        new ConflictException('이미 사용 중인 이메일입니다.'),
+      );
 
       await expect(
-        authService.register({ email: mockUser.email, name: '중복', password: 'password123' }),
+        authService.register({
+          email: mockUser.email,
+          name: '중복',
+          password: 'password123',
+        }),
       ).rejects.toBeInstanceOf(ConflictException);
     });
   });
@@ -96,7 +112,10 @@ describe('AuthService', () => {
     it('올바른 자격증명으로 accessToken과 refreshToken을 반환한다', async () => {
       (userService.findByEmail as jest.Mock).mockResolvedValue(mockUser);
 
-      const result = await authService.login({ email: mockUser.email, password: 'password123' });
+      const result = await authService.login({
+        email: mockUser.email,
+        password: 'password123',
+      });
 
       expect(result.accessToken).toBe('mock-token');
       expect(result.refreshToken).toBe('mock-token');
@@ -108,7 +127,10 @@ describe('AuthService', () => {
       (userService.findByEmail as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        authService.login({ email: 'none@example.com', password: 'password123' }),
+        authService.login({
+          email: 'none@example.com',
+          password: 'password123',
+        }),
       ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
@@ -132,9 +154,13 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('유효하지 않은 토큰이면 UnauthorizedException을 던진다', async () => {
-      (jwtService.verify as jest.Mock).mockImplementation(() => { throw new Error('invalid'); });
+      (jwtService.verify as jest.Mock).mockImplementation(() => {
+        throw new Error('invalid');
+      });
 
-      await expect(authService.refresh('bad-token')).rejects.toBeInstanceOf(UnauthorizedException);
+      await expect(authService.refresh('bad-token')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
     });
   });
 });

@@ -30,31 +30,44 @@ export class NotificationService {
 
   async sendMail(options: MailOptions, maxRetries = 3): Promise<boolean> {
     if (!this.config.get('MAIL_USER')) {
-      this.logger.warn(`[MAIL SKIP] MAIL_USER 미설정 — to: ${options.to}, subject: ${options.subject}`);
+      this.logger.warn(
+        `[MAIL SKIP] MAIL_USER 미설정 — to: ${options.to}, subject: ${options.subject}`,
+      );
       return false;
     }
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         await this.transporter.sendMail({ from: this.from, ...options });
-        this.logger.log(`[MAIL SENT] to: ${options.to}, subject: ${options.subject}`);
+        this.logger.log(
+          `[MAIL SENT] to: ${options.to}, subject: ${options.subject}`,
+        );
         return true;
       } catch (err) {
         const msg = (err as Error).message;
         if (attempt === maxRetries) {
-          this.logger.error(`[MAIL ERROR] 최종 실패 (${attempt}/${maxRetries}) — ${msg}`);
+          this.logger.error(
+            `[MAIL ERROR] 최종 실패 (${attempt}/${maxRetries}) — ${msg}`,
+          );
           return false;
         }
         // Exponential Backoff: 200ms → 400ms → 800ms
         const delay = 200 * 2 ** (attempt - 1);
-        this.logger.warn(`[MAIL RETRY] ${attempt}/${maxRetries} — ${delay}ms 후 재시도 — ${msg}`);
+        this.logger.warn(
+          `[MAIL RETRY] ${attempt}/${maxRetries} — ${delay}ms 후 재시도 — ${msg}`,
+        );
         await new Promise((r) => setTimeout(r, delay));
       }
     }
     return false;
   }
 
-  sendPurchaseConfirm(to: string, userName: string, courseTitle: string, price: number) {
+  sendPurchaseConfirm(
+    to: string,
+    userName: string,
+    courseTitle: string,
+    price: number,
+  ) {
     return this.sendMail({
       to,
       subject: `[CertificatEdu] "${courseTitle}" 수강 신청 완료`,
@@ -69,8 +82,14 @@ export class NotificationService {
     });
   }
 
-  sendDailyDigest(to: string, newCourseCount: number, topCourses: Array<{ title: string; price: number }>) {
-    const courseList = topCourses.map((c) => `<li>${c.title} — ${c.price.toLocaleString()}원</li>`).join('');
+  sendDailyDigest(
+    to: string,
+    newCourseCount: number,
+    topCourses: Array<{ title: string; price: number }>,
+  ) {
+    const courseList = topCourses
+      .map((c) => `<li>${c.title} — ${c.price.toLocaleString()}원</li>`)
+      .join('');
     return this.sendMail({
       to,
       subject: `[CertificatEdu] 오늘의 강의 현황 (신규 ${newCourseCount}개)`,

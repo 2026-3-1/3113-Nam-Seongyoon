@@ -19,5 +19,9 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // effect 내 조건부 setState는 허용된 패턴 (early return 처리)
+      'react-hooks/set-state-in-effect': 'warn',
+    },
   },
 ])

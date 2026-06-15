@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { CourseService } from './course.service';
 import { Course } from './entities/course.entity';
 import { User, UserRole } from './entities/user.entity';
+import { UserProfile } from './entities/user-profile.entity';
 import { UserService } from './user.service';
 
 const mockTeacher: User = {
@@ -16,7 +17,7 @@ const mockTeacher: User = {
   refreshTokenHash: null,
   courses: [],
   reviews: [],
-  profile: null as any,
+  profile: null as unknown as UserProfile,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -42,7 +43,13 @@ const mockCourse: Course = {
 
 describe('CourseService', () => {
   let courseService: CourseService;
-  let courseRepo: { findAndCount: jest.Mock; findOne: jest.Mock; create: jest.Mock; save: jest.Mock; remove: jest.Mock };
+  let courseRepo: {
+    findAndCount: jest.Mock;
+    findOne: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+    remove: jest.Mock;
+  };
 
   beforeEach(async () => {
     courseRepo = {
@@ -106,7 +113,9 @@ describe('CourseService', () => {
     it('없는 강의이면 NotFoundException을 던진다', async () => {
       courseRepo.findOne.mockResolvedValue(null);
 
-      await expect(courseService.findOne(999)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(courseService.findOne(999)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });
