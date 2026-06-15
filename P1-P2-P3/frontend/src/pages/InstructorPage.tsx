@@ -21,6 +21,7 @@ const emptyForm = {
   thumbnail: "",
   price: 0,
   originalPrice: 0,
+  discountPct: 0,
   badge: "인증 강사",
   duration: "총 20강",
   tag: "",
@@ -67,6 +68,7 @@ export default function InstructorPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<Set<string>>(new Set());
   const isTeacher = auth?.user.role === "TEACHER" || auth?.user.role === "ADMIN";
 
@@ -80,10 +82,19 @@ export default function InstructorPage() {
   }, [auth?.user.id, auth?.user.role, courses]);
 
   const set = (key: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const value = key === "price" || key === "originalPrice"
-      ? (event.target.value === "" ? 0 : Number(event.target.value))
-      : event.target.value;
-    setForm((prev) => ({ ...prev, [key]: value }));
+    const numKeys = ["price", "originalPrice", "discountPct"] as const;
+    const isNum = (numKeys as readonly string[]).includes(key);
+    const raw = isNum ? (event.target.value === "" ? 0 : Number(event.target.value)) : event.target.value;
+    setForm((prev) => {
+      const next = { ...prev, [key]: raw };
+      if (key === "originalPrice" || key === "discountPct") {
+        const op = key === "originalPrice" ? Number(raw) : prev.originalPrice;
+        const dp = key === "discountPct" ? Number(raw) : prev.discountPct;
+        if (op > 0 && dp > 0) next.price = Math.max(0, Math.round(op * (1 - dp / 100)));
+        else if (op > 0 && dp === 0) next.price = op;
+      }
+      return next;
+    });
     setErrors((prev) => { const next = new Set(prev); next.delete(key); return next; });
   };
 
@@ -127,30 +138,45 @@ export default function InstructorPage() {
     }
   };
 
-  const uploadVideo = async (index: number, file: File) => {
+  const uploadVideo = (index: number, file: File) => {
     if (!file.type.startsWith("video/")) {
       setMessage("동영상 파일만 업로드할 수 있습니다.");
       return;
     }
     setUploadingIndex(index);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const auth = getAuth();
-      const res = await fetch("/api/upload/video", {
-        method: "POST",
-        headers: auth ? { Authorization: `Bearer ${auth.accessToken}` } : {},
-        body: formData,
-      });
-      if (!res.ok) throw new Error("업로드 실패");
-      const data = await res.json() as { url: string };
-      setCurriculum(index, "videoUrl", data.url);
-      setMessage("");
-    } catch {
-      setMessage("동영상 업로드에 실패했습니다. 다시 시도해 주세요.");
-    } finally {
+    setUploadProgress(0);
+
+    const formData = new FormData();
+    formData.append("file", file);
+    const auth = getAuth();
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload/video");
+    if (auth) xhr.setRequestHeader("Authorization", `Bearer ${auth.accessToken}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const data = JSON.parse(xhr.responseText) as { url: string };
+        setCurriculum(index, "videoUrl", data.url);
+        setMessage("");
+      } else {
+        setMessage("동영상 업로드에 실패했습니다. 다시 시도해 주세요.");
+      }
       setUploadingIndex(null);
-    }
+      setUploadProgress(0);
+    };
+
+    xhr.onerror = () => {
+      setMessage("동영상 업로드에 실패했습니다. 다시 시도해 주세요.");
+      setUploadingIndex(null);
+      setUploadProgress(0);
+    };
+
+    xhr.send(formData);
   };
 
   const reset = () => {
@@ -174,7 +200,7 @@ export default function InstructorPage() {
     if (!form.thumbnail) newErrors.add("thumbnail");
     const validCurriculum = form.curriculum.filter((c) => c.title.trim() && c.videoUrl.trim());
     if (validCurriculum.length === 0) newErrors.add("curriculum");
-    if (form.originalPrice > 0 && form.price > form.originalPrice) newErrors.add("originalPrice");
+    if (form.discountPct < 0 || form.discountPct > 99) newErrors.add("discountPct");
 
     if (newErrors.size > 0) {
       setErrors(newErrors);
@@ -216,6 +242,9 @@ export default function InstructorPage() {
       thumbnail: course.thumbnail,
       price: course.price,
       originalPrice: course.originalPrice ?? 0,
+      discountPct: course.originalPrice && course.originalPrice > course.price
+        ? Math.round((1 - course.price / course.originalPrice) * 100)
+        : 0,
       badge: course.badge,
       duration: course.duration,
       tag: course.tag ?? "",
@@ -275,30 +304,30 @@ export default function InstructorPage() {
 
             <div className={s.instrFormGrid}>
               <div className={s.formGroup}>
-                <label className={s.formLabel}>가격</label>
+                <label className={s.formLabel}>정가</label>
                 <input
                   className={`${s.formInput} ${errors.has("price") ? s.inputError : ""}`}
                   type="number"
-                  value={form.price || ""}
-                  placeholder="0"
-                  onChange={set("price")}
+                  value={form.originalPrice || ""}
+                  placeholder="100000"
+                  onChange={set("originalPrice")}
                 />
               </div>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>
-                  정가 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(선택)</span>
-                  {form.originalPrice > 0 && form.price > 0 && form.originalPrice > form.price && (
-                    <span style={{ marginLeft: "0.5rem", color: "#ef4444", fontWeight: 700 }}>
-                      {Math.round((1 - form.price / form.originalPrice) * 100)}% 할인
+                  할인율 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(%)</span>
+                  {form.discountPct > 0 && form.originalPrice > 0 && (
+                    <span style={{ marginLeft: "0.5rem", color: "var(--accent)", fontWeight: 700 }}>
+                      → 판매가 {form.price.toLocaleString()}원
                     </span>
                   )}
                 </label>
                 <input
-                  className={`${s.formInput} ${errors.has("originalPrice") ? s.inputError : ""}`}
+                  className={`${s.formInput} ${errors.has("discountPct") ? s.inputError : ""}`}
                   type="number"
-                  value={form.originalPrice || ""}
-                  placeholder="할인 전 가격 (입력 시 할인율 자동 표시)"
-                  onChange={set("originalPrice")}
+                  value={form.discountPct || ""}
+                  placeholder="0 (할인 없음)"
+                  onChange={set("discountPct")}
                 />
               </div>
             </div>
@@ -325,7 +354,7 @@ export default function InstructorPage() {
             </div>
 
             <div className={s.formGroup}>
-              <label className={s.formLabel}>태그 <span style={{ color: "var(--muted)", fontWeight: 400 }}>(강사 자격 표시)</span></label>
+              <label className={s.formLabel}>태그</label>
               <input className={s.formInput} value={form.badge} onChange={set("badge")} placeholder="인증 강사, 업계 전문가..." />
             </div>
 
@@ -345,27 +374,37 @@ export default function InstructorPage() {
                       onChange={(event) => setCurriculum(index, "title", event.target.value)}
                       placeholder={`${index + 1}강 제목`}
                     />
-                    <label className={`${s.uploadBtn} ${s.uploadBtnSm}`}>
-                      {uploadingIndex === index ? (
-                        <span className={s.uploadSpinner} />
-                      ) : (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1, minWidth: 0 }}>
+                      <label className={`${s.uploadBtn} ${s.uploadBtnSm}`}>
+                        {uploadingIndex === index ? (
+                          <span className={s.uploadSpinner} />
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        )}
+                        {uploadingIndex === index ? `업로드 중 ${uploadProgress}%` : item.videoUrl ? "영상 변경" : "MP4 업로드"}
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm"
+                          style={{ display: "none" }}
+                          disabled={uploadingIndex !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) uploadVideo(index, file);
+                          }}
+                        />
+                      </label>
+                      {uploadingIndex === index && (
+                        <>
+                          <div className={s.uploadProgressWrap}>
+                            <div className={s.uploadProgressBar} style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                          <span className={s.uploadProgressLabel}>{uploadProgress}% 업로드됨</span>
+                        </>
                       )}
-                      {uploadingIndex === index ? "업로드 중..." : item.videoUrl ? "영상 변경" : "MP4 업로드"}
-                      <input
-                        type="file"
-                        accept="video/mp4,video/webm"
-                        style={{ display: "none" }}
-                        disabled={uploadingIndex !== null}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) void uploadVideo(index, file);
-                        }}
-                      />
-                    </label>
-                    {item.videoUrl && (
-                      <span className={s.videoFileName}>✓ {item.videoUrl.split("/").pop()}</span>
-                    )}
+                      {item.videoUrl && uploadingIndex !== index && (
+                        <span className={s.videoFileName}>✓ {item.videoUrl.split("/").pop()}</span>
+                      )}
+                    </div>
                     <button type="button" className={s.smallDangerBtn} onClick={() => removeCurriculum(index)}>삭제</button>
                   </div>
                 ))}
