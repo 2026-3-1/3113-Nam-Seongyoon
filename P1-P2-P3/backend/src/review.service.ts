@@ -51,7 +51,7 @@ export class ReviewService {
       );
     }
 
-    const user = await this.users.findOne(currentUser.id);
+    const user = await this.users.findOne({ where: { id: currentUser.id } });
     const review = this.reviews.create({ ...dto, course, user });
     return this.reviews
       .save(review)
