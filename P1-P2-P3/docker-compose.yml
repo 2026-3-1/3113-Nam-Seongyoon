@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   db:
     image: mysql:8.0
@@ -12,8 +10,6 @@ services:
       MYSQL_PASSWORD: certificatedu_pass
     volumes:
       - mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "certificatedu", "-pcertificatedu_pass"]
       interval: 10s
@@ -22,12 +18,8 @@ services:
 
   backend:
     image: ${DOCKERHUB_USERNAME:-local}/certificatedu-backend:latest
-    build:
-      context: ./backend
-      target: production
     container_name: certificatedu-backend
     restart: unless-stopped
-    env_file: ./backend/.env.production
     environment:
       PORT: 3000
       NODE_ENV: production
@@ -37,6 +29,9 @@ services:
       DB_USER: certificatedu
       DB_PASSWORD: certificatedu_pass
       DB_DATABASE: certificatedu
+      JWT_SECRET: ${JWT_SECRET:-certificatedu-jwt-secret-change-in-prod}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-certificatedu-refresh-secret-change-in-prod}
+      CORS_ORIGINS: http://3.34.42.16
     depends_on:
       db:
         condition: service_healthy
@@ -50,16 +45,12 @@ services:
 
   frontend:
     image: ${DOCKERHUB_USERNAME:-local}/certificatedu-frontend:latest
-    build:
-      context: ./frontend
-      target: production
     container_name: certificatedu-frontend
     restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
 
 volumes:
   mysql_data:
