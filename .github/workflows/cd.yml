@@ -25,7 +25,7 @@ jobs:
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
-          context: ./P1-P2-P3/backend
+          context: ./app/backend
           target: production
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/certificatedu-backend:latest
@@ -35,22 +35,24 @@ jobs:
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./P1-P2-P3/frontend
+          context: ./app/frontend
           target: production
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/certificatedu-frontend:latest
-          build-args: |
-            VITE_TOSS_CLIENT_KEY=${{ secrets.VITE_TOSS_CLIENT_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          TOSS_CLIENT_KEY: ${{ secrets.TOSS_CLIENT_KEY }}
+          TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
         with:
           host: 3.34.42.16
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: DOCKERHUB_USERNAME
+          envs: DOCKERHUB_USERNAME,TOSS_CLIENT_KEY,TOSS_SECRET_KEY
           script: |
             set -e
 
@@ -81,9 +83,13 @@ jobs:
               git -C $HOME/certificatedu reset --hard origin/master
             fi
 
-            cd $HOME/certificatedu/P1-P2-P3
+            # P1-P2-P3 → app 디렉토리 이름 변경 대응
+            if [ -d "$HOME/certificatedu/P1-P2-P3" ] && [ ! -d "$HOME/certificatedu/app" ]; then
+              mv "$HOME/certificatedu/P1-P2-P3" "$HOME/certificatedu/app"
+            fi
 
-            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            cd $HOME/certificatedu/app
+
             sudo -E docker compose pull
             sudo -E docker compose up -d --remove-orphans
             sudo docker image prune -f
