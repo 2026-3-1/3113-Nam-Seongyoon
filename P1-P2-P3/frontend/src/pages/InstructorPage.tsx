@@ -67,8 +67,7 @@ export default function InstructorPage() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
-  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState<Record<number, number>>({});
   const [errors, setErrors] = useState<Set<string>>(new Set());
   const isTeacher = auth?.user.role === "TEACHER" || auth?.user.role === "ADMIN";
 
@@ -143,40 +142,66 @@ export default function InstructorPage() {
       setMessage("동영상 파일만 업로드할 수 있습니다.");
       return;
     }
-    setUploadingIndex(index);
-    setUploadProgress(0);
+    setUploading((prev) => ({ ...prev, [index]: 0 }));
 
     const formData = new FormData();
     formData.append("file", file);
-    const auth = getAuth();
+    const currentAuth = getAuth();
 
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/upload/video");
-    if (auth) xhr.setRequestHeader("Authorization", `Bearer ${auth.accessToken}`);
+    if (currentAuth) xhr.setRequestHeader("Authorization", `Bearer ${currentAuth.accessToken}`);
 
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+      if (e.lengthComputable) {
+        setUploading((prev) => ({ ...prev, [index]: Math.round((e.loaded / e.total) * 100) }));
+      }
     };
 
+    const finish = () => setUploading((prev) => { const next = { ...prev }; delete next[index]; return next; });
+
     xhr.onload = () => {
+      setUploading((prev) => ({ ...prev, [index]: 100 }));
       if (xhr.status >= 200 && xhr.status < 300) {
         const data = JSON.parse(xhr.responseText) as { url: string };
         setCurriculum(index, "videoUrl", data.url);
-        setMessage("");
       } else {
         setMessage("동영상 업로드에 실패했습니다. 다시 시도해 주세요.");
       }
-      setUploadingIndex(null);
-      setUploadProgress(0);
+      setTimeout(finish, 600);
     };
 
     xhr.onerror = () => {
       setMessage("동영상 업로드에 실패했습니다. 다시 시도해 주세요.");
-      setUploadingIndex(null);
-      setUploadProgress(0);
+      finish();
     };
 
     xhr.send(formData);
+  };
+
+  const uploadMultiple = (files: FileList) => {
+    const fileArray = Array.from(files).filter((f) => f.type.startsWith("video/"));
+    if (fileArray.length === 0) return;
+
+    const curr = [...form.curriculum];
+    const targets: number[] = [];
+
+    for (const file of fileArray) {
+      const taken = new Set(targets);
+      const emptyIdx = curr.findIndex((item, i) => !item.videoUrl && !taken.has(i));
+      if (emptyIdx !== -1) {
+        targets.push(emptyIdx);
+        if (!curr[emptyIdx].title) {
+          curr[emptyIdx] = { ...curr[emptyIdx], title: file.name.replace(/\.[^/.]+$/, "") };
+        }
+      } else {
+        targets.push(curr.length);
+        curr.push({ title: file.name.replace(/\.[^/.]+$/, ""), videoUrl: "" });
+      }
+    }
+
+    setForm((prev) => ({ ...prev, curriculum: curr }));
+    fileArray.forEach((file, i) => uploadVideo(targets[i], file));
   };
 
   const reset = () => {
@@ -216,6 +241,7 @@ export default function InstructorPage() {
     const payload = {
       ...form,
       originalPrice: form.originalPrice || undefined,
+      discountPct: undefined,
       tag: undefined,
       duration: `총 ${curriculum.length}강`,
       curriculum,
@@ -376,39 +402,52 @@ export default function InstructorPage() {
                     />
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1, minWidth: 0 }}>
                       <label className={`${s.uploadBtn} ${s.uploadBtnSm}`}>
-                        {uploadingIndex === index ? (
+                        {index in uploading ? (
                           <span className={s.uploadSpinner} />
                         ) : (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         )}
-                        {uploadingIndex === index ? `업로드 중 ${uploadProgress}%` : item.videoUrl ? "영상 변경" : "MP4 업로드"}
+                        {index in uploading ? `업로드 중 ${uploading[index]}%` : item.videoUrl ? "영상 변경" : "MP4 업로드"}
                         <input
                           type="file"
                           accept="video/mp4,video/webm"
                           style={{ display: "none" }}
-                          disabled={uploadingIndex !== null}
+                          disabled={index in uploading}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) uploadVideo(index, file);
                           }}
                         />
                       </label>
-                      {uploadingIndex === index && (
+                      {index in uploading && (
                         <>
                           <div className={s.uploadProgressWrap}>
-                            <div className={s.uploadProgressBar} style={{ width: `${uploadProgress}%` }} />
+                            <div className={s.uploadProgressBar} style={{ width: `${uploading[index]}%` }} />
                           </div>
-                          <span className={s.uploadProgressLabel}>{uploadProgress}% 업로드됨</span>
+                          <span className={s.uploadProgressLabel}>{uploading[index]}% 업로드됨</span>
                         </>
                       )}
-                      {item.videoUrl && uploadingIndex !== index && (
+                      {item.videoUrl && !(index in uploading) && (
                         <span className={s.videoFileName}>✓ {item.videoUrl.split("/").pop()}</span>
                       )}
                     </div>
                     <button type="button" className={s.smallDangerBtn} onClick={() => removeCurriculum(index)}>삭제</button>
                   </div>
                 ))}
-                <button type="button" className={s.btnOutline} onClick={addCurriculum}>+ 강의 추가</button>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <button type="button" className={s.btnOutline} onClick={addCurriculum}>+ 강의 추가</button>
+                  <label className={s.btnOutline} style={{ cursor: "pointer" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    영상 여러 개 한 번에
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm"
+                      multiple
+                      style={{ display: "none" }}
+                      onChange={(e) => { if (e.target.files) uploadMultiple(e.target.files); e.target.value = ""; }}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
