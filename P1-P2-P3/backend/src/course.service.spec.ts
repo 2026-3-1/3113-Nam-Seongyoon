@@ -49,15 +49,27 @@ describe('CourseService', () => {
     create: jest.Mock;
     save: jest.Mock;
     remove: jest.Mock;
+    createQueryBuilder: jest.Mock;
   };
 
   beforeEach(async () => {
+    const qb = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([
+        { courseId: 1, avgRating: '4.5', reviewCount: '2' },
+      ]),
+    };
     courseRepo = {
       findAndCount: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(qb),
     };
 
     const module = await Test.createTestingModule({
@@ -84,9 +96,20 @@ describe('CourseService', () => {
       expect(result.total).toBe(1);
       expect(result.page).toBe(1);
       expect(result.totalPages).toBe(1);
+      expect(result.data[0].rating).toBe(4.5);
+      expect(result.data[0].reviewCount).toBe(2);
       expect(courseRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 0, take: 20 }),
       );
+    });
+
+    it('강의가 없으면 createQueryBuilder를 호출하지 않는다', async () => {
+      courseRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      const result = await courseService.findAll(1, 20);
+
+      expect(result.data).toHaveLength(0);
+      expect(courseRepo.createQueryBuilder).not.toHaveBeenCalled();
     });
 
     it('limit이 100을 초과하면 100으로 제한한다', async () => {
