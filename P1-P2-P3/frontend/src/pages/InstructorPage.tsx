@@ -16,7 +16,7 @@ const THUMBNAIL_QUALITY = 0.78;
 
 const emptyForm = {
   title: "",
-  category: "IT/개발",
+  category: "IT/정보",
   description: "",
   thumbnail: "",
   price: 0,
