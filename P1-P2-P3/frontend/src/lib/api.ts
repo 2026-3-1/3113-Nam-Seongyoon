@@ -182,6 +182,9 @@ export const api = {
   orders() {
     return request<Order[]>("/orders");
   },
+  config() {
+    return request<{ tossClientKey: string }>("/config");
+  },
   reviews(courseId: number) {
     return request<Review[]>(`/courses/${courseId}/reviews`);
   },

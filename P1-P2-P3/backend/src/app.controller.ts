@@ -19,4 +19,9 @@ export class AppController {
   check() {
     return this.health.check([() => this.db.pingCheck('database')]);
   }
+
+  @Get('config')
+  config() {
+    return { tossClientKey: process.env.TOSS_CLIENT_KEY ?? '' };
+  }
 }

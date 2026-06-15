@@ -6,8 +6,6 @@ import { isImageSource } from "../lib/media";
 import type { CartItem } from "../types";
 import s from "../styles/pages.module.css";
 
-const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY as string;
-
 export default function CartPage() {
   const [auth, setAuth] = useState<AuthState | null>(() => getAuth());
   const [items, setItems] = useState<CartItem[]>([]);
@@ -92,16 +90,16 @@ export default function CartPage() {
       setMessage("결제할 강의를 선택해 주세요.");
       return;
     }
-    if (!TOSS_CLIENT_KEY) {
-      setMessage("Toss 클라이언트 키가 설정되지 않았습니다. (.env에 VITE_TOSS_CLIENT_KEY 추가)");
-      return;
-    }
 
     try {
-      const info = await api.initiateCheckout();
+      const [info, { tossClientKey }] = await Promise.all([
+        api.initiateCheckout(),
+        api.config(),
+      ]);
       if (!info.ok) { setMessage(info.message ?? "결제를 시작할 수 없습니다."); return; }
+      if (!tossClientKey) { setMessage("결제 서비스가 설정되지 않았습니다."); return; }
 
-      const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
+      const tossPayments = await loadTossPayments(tossClientKey);
       const payment = tossPayments.payment({ customerKey: ANONYMOUS });
       await payment.requestPayment({
         method: "CARD",

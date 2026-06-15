@@ -32,6 +32,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-certificatedu-jwt-secret-change-in-prod}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-certificatedu-refresh-secret-change-in-prod}
       CORS_ORIGINS: http://3.34.42.16
+      TOSS_CLIENT_KEY: ${TOSS_CLIENT_KEY:-}
+      TOSS_SECRET_KEY: ${TOSS_SECRET_KEY:-}
     depends_on:
       db:
         condition: service_healthy
