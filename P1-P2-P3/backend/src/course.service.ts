@@ -107,7 +107,7 @@ export class CourseService {
 
   async create(dto: CreateCourseDto, currentUser: CurrentUser) {
     this.assertValidPrice(dto.price, dto.originalPrice);
-    const teacher = await this.users.findOne({ where: { id: currentUser.id } });
+    const teacher = await this.users.findOne(currentUser.id);
     const curriculum = dto.curriculum ?? [];
     const course = this.courses.create({
       ...dto,
