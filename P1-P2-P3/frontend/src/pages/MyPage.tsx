@@ -65,7 +65,7 @@ export default function MyPage() {
         </div>
       </div>
 
-      {error && <p className={s.formError}>{error}</p>}
+      {error && !isInstructor && <p className={s.formError}>{error}</p>}
 
       {isInstructor ? (
         <>

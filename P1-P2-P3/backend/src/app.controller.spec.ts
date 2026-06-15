@@ -9,7 +9,10 @@ describe('AppController', () => {
 
   beforeEach(async () => {
     healthService = {
-      check: jest.fn().mockResolvedValue({ status: 'ok', info: { database: { status: 'up' } } }),
+      check: jest.fn().mockResolvedValue({
+        status: 'ok',
+        info: { database: { status: 'up' } },
+      }),
     };
     dbIndicator = {
       pingCheck: jest.fn().mockResolvedValue({ database: { status: 'up' } }),

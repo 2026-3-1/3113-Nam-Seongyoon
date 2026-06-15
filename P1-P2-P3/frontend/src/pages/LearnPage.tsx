@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, getAuth } from "../lib/api";
-import { getYouTubeEmbedUrl } from "../lib/media";
 import type { Course, CourseProgress } from "../types";
 import s from "../styles/pages.module.css";
 
@@ -60,7 +59,6 @@ export default function LearnPage() {
   }
 
   const activeChapter = curriculum[activeIndex];
-  const embedUrl = activeChapter ? getYouTubeEmbedUrl(activeChapter.youtubeUrl) : "";
 
   return (
     <div className={s.learnWrap}>
@@ -83,19 +81,18 @@ export default function LearnPage() {
       <div className={s.learnBody}>
         <div className={s.videoArea}>
           <div className={s.videoPlayer}>
-            {embedUrl ? (
-              <iframe
+            {activeChapter?.videoUrl ? (
+              <video
+                key={activeChapter.videoUrl}
                 className={s.videoFrame}
-                src={embedUrl}
-                title={activeChapter.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
+                controls
+                src={activeChapter.videoUrl}
               />
             ) : (
               <div className={s.videoPlaceholder}>
                 <div className={s.playBtn}>Play</div>
-                <p style={{ fontWeight: 700 }}>재생할 YouTube 영상이 없습니다.</p>
-                <p style={{ color: "var(--muted)" }}>선생님 관리 페이지에서 커리큘럼별 YouTube 링크를 등록해 주세요.</p>
+                <p style={{ fontWeight: 700 }}>재생할 영상이 없습니다.</p>
+                <p style={{ color: "var(--muted)" }}>선생님 관리 페이지에서 커리큘럼별 MP4를 업로드해 주세요.</p>
               </div>
             )}
           </div>
@@ -150,7 +147,7 @@ export default function LearnPage() {
                       <span className={s.sidebarChapterTitleWrap}>
                         <span className={`${s.sidebarChapterTitle} ${index === activeIndex ? s.sidebarChapterTitleActive : ""}`}>{chapter.title}</span>
                       </span>
-                      <span className={s.sidebarChapterDur}>YouTube</span>
+                      <span className={s.sidebarChapterDur}>MP4</span>
                     </span>
                   </button>
                 );

@@ -8,7 +8,7 @@ import s from "../styles/pages.module.css";
 
 const blankCurriculumItem: CurriculumItem = {
   title: "",
-  youtubeUrl: "",
+  videoUrl: "",
 };
 
 const THUMBNAIL_MAX_SIZE = 1280;
@@ -66,6 +66,7 @@ export default function InstructorPage() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const isTeacher = auth?.user.role === "TEACHER" || auth?.user.role === "ADMIN";
 
   useEffect(() => {
@@ -122,6 +123,32 @@ export default function InstructorPage() {
     }
   };
 
+  const uploadVideo = async (index: number, file: File) => {
+    if (!file.type.startsWith("video/")) {
+      setMessage("동영상 파일만 업로드할 수 있습니다.");
+      return;
+    }
+    setUploadingIndex(index);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const auth = getAuth();
+      const res = await fetch("/api/upload/video", {
+        method: "POST",
+        headers: auth ? { Authorization: `Bearer ${auth.accessToken}` } : {},
+        body: formData,
+      });
+      if (!res.ok) throw new Error("업로드 실패");
+      const data = await res.json() as { url: string };
+      setCurriculum(index, "videoUrl", data.url);
+      setMessage("");
+    } catch {
+      setMessage("동영상 업로드에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
+
   const reset = () => {
     setForm({ ...emptyForm, curriculum: [{ ...blankCurriculumItem }] });
     setEditingId(null);
@@ -147,8 +174,8 @@ export default function InstructorPage() {
     }
 
     const curriculum = form.curriculum
-      .map((item) => ({ title: item.title.trim(), youtubeUrl: item.youtubeUrl.trim() }))
-      .filter((item) => item.title && item.youtubeUrl);
+      .map((item) => ({ title: item.title.trim(), videoUrl: item.videoUrl.trim() }))
+      .filter((item) => item.title && item.videoUrl);
 
     const payload = {
       ...form,
@@ -250,13 +277,20 @@ export default function InstructorPage() {
             <div className={s.instrFormGrid}>
               <div className={s.formGroup}>
                 <label className={s.formLabel}>썸네일 사진</label>
-                <input className={s.formInput} type="file" accept="image/*" onChange={readThumbnail} />
+                <label className={s.uploadBtn}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  {form.thumbnail ? "썸네일 변경" : "썸네일 업로드"}
+                  <input type="file" accept="image/*" onChange={readThumbnail} style={{ display: "none" }} />
+                </label>
               </div>
               <div className={s.thumbPreview}>
                 {isImageSource(form.thumbnail) ? (
                   <img src={form.thumbnail} alt="" className={s.thumbImage} />
                 ) : (
-                  "이미지를 업로드해 주세요"
+                  <div className={s.thumbPlaceholder}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>이미지를 업로드해 주세요</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -286,18 +320,33 @@ export default function InstructorPage() {
                       className={s.formInput}
                       value={item.title}
                       onChange={(event) => setCurriculum(index, "title", event.target.value)}
-                      placeholder="커리큘럼 제목"
+                      placeholder={`${index + 1}강 제목`}
                     />
-                    <input
-                      className={s.formInput}
-                      value={item.youtubeUrl}
-                      onChange={(event) => setCurriculum(index, "youtubeUrl", event.target.value)}
-                      placeholder="YouTube URL"
-                    />
+                    <label className={`${s.uploadBtn} ${s.uploadBtnSm}`}>
+                      {uploadingIndex === index ? (
+                        <span className={s.uploadSpinner} />
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      )}
+                      {uploadingIndex === index ? "업로드 중..." : item.videoUrl ? "영상 변경" : "MP4 업로드"}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm"
+                        style={{ display: "none" }}
+                        disabled={uploadingIndex !== null}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void uploadVideo(index, file);
+                        }}
+                      />
+                    </label>
+                    {item.videoUrl && (
+                      <span className={s.videoFileName}>✓ {item.videoUrl.split("/").pop()}</span>
+                    )}
                     <button type="button" className={s.smallDangerBtn} onClick={() => removeCurriculum(index)}>삭제</button>
                   </div>
                 ))}
-                <button type="button" className={s.btnOutline} onClick={addCurriculum}>커리큘럼 추가</button>
+                <button type="button" className={s.btnOutline} onClick={addCurriculum}>+ 강의 추가</button>
               </div>
             </div>
 

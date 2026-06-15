@@ -69,7 +69,7 @@ export interface Order {
 
 export interface CurriculumItem {
   title: string;
-  youtubeUrl: string;
+  videoUrl: string;
 }
 
 export interface Review {

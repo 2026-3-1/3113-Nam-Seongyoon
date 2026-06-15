@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { CurrentUser } from './auth/current-user.decorator';
@@ -29,10 +34,21 @@ export class CourseService {
       const rating =
         reviews.length === 0
           ? 0
-          : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
-      return this.serializeCourse(course, Number(rating.toFixed(1)), reviews.length);
+          : reviews.reduce((sum, review) => sum + review.rating, 0) /
+            reviews.length;
+      return this.serializeCourse(
+        course,
+        Number(rating.toFixed(1)),
+        reviews.length,
+      );
     });
-    return { data, total, page: safePage, limit: safeLimit, totalPages: Math.ceil(total / safeLimit) };
+    return {
+      data,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+    };
   }
 
   async findOne(id: number) {
@@ -47,8 +63,13 @@ export class CourseService {
     const rating =
       reviews.length === 0
         ? 0
-        : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
-    return this.serializeCourse(course, Number(rating.toFixed(1)), reviews.length);
+        : reviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviews.length;
+    return this.serializeCourse(
+      course,
+      Number(rating.toFixed(1)),
+      reviews.length,
+    );
   }
 
   async create(dto: CreateCourseDto, currentUser: CurrentUser) {
@@ -64,24 +85,37 @@ export class CourseService {
       duration: this.resolveDuration(dto.duration, curriculum),
       teacher,
     });
-    return this.courses.save(course).then((saved) => this.serializeCourse(saved, 0, 0));
+    return this.courses
+      .save(course)
+      .then((saved) => this.serializeCourse(saved, 0, 0));
   }
 
   async update(id: number, dto: UpdateCourseDto, currentUser: CurrentUser) {
-    const course = await this.courses.findOne({ where: { id }, relations: { teacher: true } });
+    const course = await this.courses.findOne({
+      where: { id },
+      relations: { teacher: true },
+    });
     if (!course) throw new NotFoundException('강의를 찾을 수 없습니다.');
     this.assertOwnerOrAdmin(course, currentUser);
-    this.assertValidPrice(dto.price ?? course.price, dto.originalPrice ?? course.originalPrice ?? undefined);
+    this.assertValidPrice(
+      dto.price ?? course.price,
+      dto.originalPrice ?? course.originalPrice ?? undefined,
+    );
 
     Object.assign(course, dto);
     if (dto.curriculum) {
       course.duration = this.resolveDuration(dto.duration, dto.curriculum);
     }
-    return this.courses.save(course).then((saved) => this.serializeCourse(saved, 0, 0));
+    return this.courses
+      .save(course)
+      .then((saved) => this.serializeCourse(saved, 0, 0));
   }
 
   async remove(id: number, currentUser: CurrentUser) {
-    const course = await this.courses.findOne({ where: { id }, relations: { teacher: true } });
+    const course = await this.courses.findOne({
+      where: { id },
+      relations: { teacher: true },
+    });
     if (!course) throw new NotFoundException('강의를 찾을 수 없습니다.');
     this.assertOwnerOrAdmin(course, currentUser);
     await this.courses.remove(course);
@@ -91,7 +125,8 @@ export class CourseService {
   private assertOwnerOrAdmin(course: Course, currentUser: CurrentUser) {
     const isAdmin = currentUser.role === UserRole.ADMIN;
     const isOwner = course.teacher?.id === currentUser.id;
-    if (!isAdmin && !isOwner) throw new ForbiddenException('본인이 등록한 강의만 수정할 수 있습니다.');
+    if (!isAdmin && !isOwner)
+      throw new ForbiddenException('본인이 등록한 강의만 수정할 수 있습니다.');
   }
 
   private assertValidPrice(price: number, originalPrice?: number | null) {
@@ -119,7 +154,12 @@ export class CourseService {
     };
   }
 
-  private resolveDuration(duration: string | undefined, curriculum: Array<unknown>) {
-    return curriculum.length > 0 ? `총 ${curriculum.length}강` : (duration?.trim() || '총 0강');
+  private resolveDuration(
+    duration: string | undefined,
+    curriculum: Array<unknown>,
+  ) {
+    return curriculum.length > 0
+      ? `총 ${curriculum.length}강`
+      : duration?.trim() || '총 0강';
   }
 }

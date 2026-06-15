@@ -45,13 +45,16 @@ export class Course {
   @Column({ type: 'simple-json', default: '[]' })
   curriculum: Array<{
     title: string;
-    youtubeUrl: string;
+    videoUrl: string;
   }>;
 
   @Column({ default: true })
   isPublished: boolean;
 
-  @ManyToOne(() => User, (user) => user.courses, { eager: true, nullable: true })
+  @ManyToOne(() => User, (user) => user.courses, {
+    eager: true,
+    nullable: true,
+  })
   teacher: User | null;
 
   @OneToMany(() => Review, (review) => review.course)

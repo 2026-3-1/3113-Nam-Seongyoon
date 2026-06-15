@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { In, Repository } from 'typeorm';
@@ -35,7 +39,10 @@ export class UserService {
     const exists = await this.users.findOne({ where: { email: dto.email } });
     if (exists) throw new ConflictException('이미 사용 중인 이메일입니다.');
 
-    const role = dto.role === UserRole.ADMIN ? UserRole.STUDENT : (dto.role ?? UserRole.STUDENT);
+    const role =
+      dto.role === UserRole.ADMIN
+        ? UserRole.STUDENT
+        : (dto.role ?? UserRole.STUDENT);
     const user = this.users.create({
       email: dto.email,
       name: dto.name,
@@ -98,7 +105,9 @@ export class UserService {
       order: { createdAt: 'DESC' },
     });
 
-    const isInstructor = currentUser.role === UserRole.TEACHER || currentUser.role === UserRole.ADMIN;
+    const isInstructor =
+      currentUser.role === UserRole.TEACHER ||
+      currentUser.role === UserRole.ADMIN;
     const progressItems = await this.progresses.find({
       where: { user: { id: currentUser.id } },
       relations: { course: { teacher: true } },
@@ -107,13 +116,21 @@ export class UserService {
     const studentCourses = isInstructor
       ? await this.getInstructorCourses(currentUser.id)
       : this.getStudentCourses(progressItems, orders);
-    const instructorStudents = isInstructor ? await this.getInstructorStudents(currentUser.id) : [];
+    const instructorStudents = isInstructor
+      ? await this.getInstructorStudents(currentUser.id)
+      : [];
     const avgProgress = progressItems.length
-      ? Math.round(progressItems.reduce((sum, item) => sum + item.progressPercent, 0) / progressItems.length)
+      ? Math.round(
+          progressItems.reduce((sum, item) => sum + item.progressPercent, 0) /
+            progressItems.length,
+        )
       : profile.progressPercent;
     const completedCount = isInstructor
-      ? instructorStudents.filter((item) => item.progress.progressPercent >= 100).length
-      : progressItems.filter((item) => item.progressPercent >= 100).length || profile.completedCount;
+      ? instructorStudents.filter(
+          (item) => item.progress.progressPercent >= 100,
+        ).length
+      : progressItems.filter((item) => item.progressPercent >= 100).length ||
+        profile.completedCount;
 
     return {
       user: {
@@ -123,10 +140,14 @@ export class UserService {
         role: user.role,
       },
       stats: {
-        enrolledCount: isInstructor ? instructorStudents.length : studentCourses.length,
+        enrolledCount: isInstructor
+          ? instructorStudents.length
+          : studentCourses.length,
         completedCount,
         progressPercent: isInstructor
-          ? this.average(instructorStudents.map((item) => item.progress.progressPercent))
+          ? this.average(
+              instructorStudents.map((item) => item.progress.progressPercent),
+            )
           : avgProgress,
         reviewCount: userReviews.length,
         bookmarkCount: bookmarks.length,
@@ -155,13 +176,20 @@ export class UserService {
   }
 
   private async ensureProfile(user: User) {
-    const exists = await this.profiles.findOne({ where: { user: { id: user.id } } });
+    const exists = await this.profiles.findOne({
+      where: { user: { id: user.id } },
+    });
     if (exists) return exists;
     return this.profiles.save(this.profiles.create({ user }));
   }
 
   private getStudentCourses(progressItems: CourseProgress[], orders: Order[]) {
-    const byCourse = new Map<number, ReturnType<UserService['serializeCourse']> & { progress: ReturnType<UserService['serializeProgress']> }>();
+    const byCourse = new Map<
+      number,
+      ReturnType<UserService['serializeCourse']> & {
+        progress: ReturnType<UserService['serializeProgress']>;
+      }
+    >();
 
     for (const order of orders) {
       for (const item of order.items) {
@@ -262,7 +290,8 @@ export class UserService {
     }
 
     return [...studentProgress.values()].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   }
 
@@ -285,7 +314,11 @@ export class UserService {
   }
 
   private average(values: number[]) {
-    return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+    return values.length
+      ? Math.round(
+          values.reduce((sum, value) => sum + value, 0) / values.length,
+        )
+      : 0;
   }
 
   private serializeCourse(course: Course) {

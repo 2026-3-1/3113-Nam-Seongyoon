@@ -11,7 +11,17 @@ import { User } from './entities/user.entity';
 import { NotificationModule } from './notification/notification.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CartItem, Course, Order, OrderItem, User, Payment]), NotificationModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      CartItem,
+      Course,
+      Order,
+      OrderItem,
+      User,
+      Payment,
+    ]),
+    NotificationModule,
+  ],
   controllers: [CartController],
   providers: [CartService],
 })

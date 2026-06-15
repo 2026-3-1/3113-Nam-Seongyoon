@@ -23,7 +23,10 @@ export class Review {
   @ManyToOne(() => Course, (course) => course.reviews, { onDelete: 'CASCADE' })
   course: Course;
 
-  @ManyToOne(() => User, (user) => user.reviews, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.reviews, {
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   user: User;
 
   @CreateDateColumn()

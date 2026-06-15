@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { CurrentUser } from './auth/current-user.decorator';
@@ -99,7 +104,10 @@ export class CartService {
     const user = await this.users.findOne({ where: { id: currentUser.id } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
-    const totalPrice = selectedItems.reduce((sum, item) => sum + item.course.price, 0);
+    const totalPrice = selectedItems.reduce(
+      (sum, item) => sum + item.course.price,
+      0,
+    );
     // Toss orderId: 영숫자·하이픈만 허용 (최대 64자)
     const tossOrderId = `cert-${currentUser.id}-${Date.now()}`;
     const orderName =
@@ -108,30 +116,57 @@ export class CartService {
         : `${selectedItems[0].course.title} 외 ${selectedItems.length - 1}건`;
 
     // PENDING 결제 레코드 생성 (idempotencyKey = tossOrderId)
-    const existing = await this.payments.findOne({ where: { idempotencyKey: tossOrderId } });
+    const existing = await this.payments.findOne({
+      where: { idempotencyKey: tossOrderId },
+    });
     if (!existing) {
       await this.payments.save(
-        this.payments.create({ idempotencyKey: tossOrderId, status: PaymentStatus.PENDING, amount: totalPrice, user }),
+        this.payments.create({
+          idempotencyKey: tossOrderId,
+          status: PaymentStatus.PENDING,
+          amount: totalPrice,
+          user,
+        }),
       );
     }
 
-    return { ok: true, tossOrderId, orderName, amount: totalPrice, customerEmail: user.email, customerName: user.name };
+    return {
+      ok: true,
+      tossOrderId,
+      orderName,
+      amount: totalPrice,
+      customerEmail: user.email,
+      customerName: user.name,
+    };
   }
 
   /**
    * 2단계: Toss 결제 확인 — Toss API 승인 후 주문·결제 완료 처리
    */
-  async confirmCheckout(currentUser: CurrentUser, paymentKey: string, tossOrderId: string, amount: number) {
-    const payment = await this.payments.findOne({ where: { idempotencyKey: tossOrderId, user: { id: currentUser.id } } });
+  async confirmCheckout(
+    currentUser: CurrentUser,
+    paymentKey: string,
+    tossOrderId: string,
+    amount: number,
+  ) {
+    const payment = await this.payments.findOne({
+      where: { idempotencyKey: tossOrderId, user: { id: currentUser.id } },
+    });
     if (!payment) throw new NotFoundException('결제 정보를 찾을 수 없습니다.');
-    if (payment.status === PaymentStatus.PAID) throw new ConflictException('이미 처리된 결제입니다.');
-    if (payment.amount !== amount) throw new ConflictException('결제 금액이 일치하지 않습니다.');
+    if (payment.status === PaymentStatus.PAID)
+      throw new ConflictException('이미 처리된 결제입니다.');
+    if (payment.amount !== amount)
+      throw new ConflictException('결제 금액이 일치하지 않습니다.');
 
     const user = await this.users.findOne({ where: { id: currentUser.id } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
     try {
-      const tossResult = await this.callTossConfirm(paymentKey, tossOrderId, amount);
+      const tossResult = await this.callTossConfirm(
+        paymentKey,
+        tossOrderId,
+        amount,
+      );
 
       const selectedItems = await this.cartItems.find({
         where: { user: { id: currentUser.id }, selected: true },
@@ -143,7 +178,12 @@ export class CartService {
           user,
           totalPrice: amount,
           status: 'PAID',
-          items: selectedItems.map((item) => this.orderItems.create({ course: item.course, price: item.course.price })),
+          items: selectedItems.map((item) =>
+            this.orderItems.create({
+              course: item.course,
+              price: item.course.price,
+            }),
+          ),
         }),
       );
 
@@ -156,10 +196,22 @@ export class CartService {
       await this.cartItems.remove(selectedItems);
 
       this.notification
-        .sendPurchaseConfirm(user.email, user.name, selectedItems.map((i) => i.course.title).join(', '), amount)
-        .catch((err) => this.logger.warn(`[알림 실패] ${(err as Error).message}`));
+        .sendPurchaseConfirm(
+          user.email,
+          user.name,
+          selectedItems.map((i) => i.course.title).join(', '),
+          amount,
+        )
+        .catch((err) =>
+          this.logger.warn(`[알림 실패] ${(err as Error).message}`),
+        );
 
-      return { ok: true, orderId: order.id, receiptUrl: payment.receiptUrl, message: '결제가 완료되었습니다.' };
+      return {
+        ok: true,
+        orderId: order.id,
+        receiptUrl: payment.receiptUrl,
+        message: '결제가 완료되었습니다.',
+      };
     } catch (err) {
       payment.status = PaymentStatus.FAILED;
       payment.failReason = (err as Error).message;
@@ -169,22 +221,38 @@ export class CartService {
   }
 
   /** Toss Payments 승인 API 호출 (Exponential Backoff 재시도) */
-  private async callTossConfirm(paymentKey: string, orderId: string, amount: number, maxRetries = 3) {
+  private async callTossConfirm(
+    paymentKey: string,
+    orderId: string,
+    amount: number,
+    maxRetries = 3,
+  ) {
     const secretKey = process.env.TOSS_SECRET_KEY ?? '';
     const encoded = Buffer.from(`${secretKey}:`).toString('base64');
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const res = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
-          method: 'POST',
-          headers: { Authorization: `Basic ${encoded}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentKey, orderId, amount }),
-        });
+        const res = await fetch(
+          'https://api.tosspayments.com/v1/payments/confirm',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Basic ${encoded}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ paymentKey, orderId, amount }),
+          },
+        );
         if (!res.ok) {
-          const err = await res.json().catch(() => ({})) as { message?: string };
+          const err = (await res.json().catch(() => ({}))) as {
+            message?: string;
+          };
           throw new Error(err.message ?? `Toss API 오류 (${res.status})`);
         }
-        return res.json() as Promise<{ paymentKey: string; receipt?: { url: string } }>;
+        return res.json() as Promise<{
+          paymentKey: string;
+          receipt?: { url: string };
+        }>;
       } catch (err) {
         if (attempt === maxRetries) throw err;
         await new Promise((r) => setTimeout(r, 100 * 2 ** (attempt - 1)));
@@ -208,7 +276,8 @@ export class CartService {
     const rating =
       reviews.length === 0
         ? 0
-        : reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+        : reviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviews.length;
 
     return {
       id: item.id,

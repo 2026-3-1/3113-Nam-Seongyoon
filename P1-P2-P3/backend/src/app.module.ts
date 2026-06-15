@@ -15,9 +15,10 @@ import { ProgressModule } from './progress.module';
 import { ReviewModule } from './review.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { UserModule } from './user.module';
+import { UploadController } from './upload.controller';
 
 @Module({
-  controllers: [AppController],
+  controllers: [AppController, UploadController],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({

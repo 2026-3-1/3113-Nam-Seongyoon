@@ -8,7 +8,10 @@ import { ReviewService } from './review.service';
 import { UserModule } from './user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Course, CourseProgress, Review]), UserModule],
+  imports: [
+    TypeOrmModule.forFeature([Course, CourseProgress, Review]),
+    UserModule,
+  ],
   controllers: [ReviewController],
   providers: [ReviewService],
 })

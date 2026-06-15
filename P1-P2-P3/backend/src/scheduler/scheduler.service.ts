@@ -39,10 +39,20 @@ export class SchedulerService {
         );
       }
 
-      await this.saveLog('daily-digest', JobStatus.SUCCESS, `신규 강의 ${newCourses.length}개`, Date.now() - start);
+      await this.saveLog(
+        'daily-digest',
+        JobStatus.SUCCESS,
+        `신규 강의 ${newCourses.length}개`,
+        Date.now() - start,
+      );
       this.logger.log(`[daily-digest] 완료 — 신규 강의 ${newCourses.length}개`);
     } catch (err) {
-      await this.saveLog('daily-digest', JobStatus.FAILED, (err as Error).message, Date.now() - start);
+      await this.saveLog(
+        'daily-digest',
+        JobStatus.FAILED,
+        (err as Error).message,
+        Date.now() - start,
+      );
       this.logger.error(`[daily-digest] 실패 — ${(err as Error).message}`);
     }
   }
@@ -52,10 +62,22 @@ export class SchedulerService {
   async publishCheck() {
     const start = Date.now();
     try {
-      const unpublished = await this.courses.count({ where: { isPublished: false } });
-      await this.saveLog('publish-check', JobStatus.SUCCESS, `미발행 강의 ${unpublished}개 확인`, Date.now() - start);
+      const unpublished = await this.courses.count({
+        where: { isPublished: false },
+      });
+      await this.saveLog(
+        'publish-check',
+        JobStatus.SUCCESS,
+        `미발행 강의 ${unpublished}개 확인`,
+        Date.now() - start,
+      );
     } catch (err) {
-      await this.saveLog('publish-check', JobStatus.FAILED, (err as Error).message, Date.now() - start);
+      await this.saveLog(
+        'publish-check',
+        JobStatus.FAILED,
+        (err as Error).message,
+        Date.now() - start,
+      );
     }
   }
 
@@ -63,7 +85,14 @@ export class SchedulerService {
     return this.jobLogs.find({ order: { createdAt: 'DESC' }, take: limit });
   }
 
-  private saveLog(jobName: string, status: JobStatus, message: string, durationMs: number) {
-    return this.jobLogs.save(this.jobLogs.create({ jobName, status, message, durationMs }));
+  private saveLog(
+    jobName: string,
+    status: JobStatus,
+    message: string,
+    durationMs: number,
+  ) {
+    return this.jobLogs.save(
+      this.jobLogs.create({ jobName, status, message, durationMs }),
+    );
   }
 }

@@ -1,12 +1,20 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export class CurriculumItemDto {
   @IsString()
   title: string;
 
   @IsString()
-  youtubeUrl: string;
+  videoUrl: string;
 }
 
 export class CreateCourseDto {

@@ -33,7 +33,7 @@ const mockCourse: Course = {
   badge: '인증 강사',
   duration: '총 5강',
   tag: null,
-  curriculum: [{ title: '1강', youtubeUrl: 'https://youtube.com/watch?v=xxx' }],
+  curriculum: [{ title: '1강', videoUrl: 'https://youtube.com/watch?v=xxx' }],
   isPublished: true,
   teacher: mockTeacher,
   reviews: [],

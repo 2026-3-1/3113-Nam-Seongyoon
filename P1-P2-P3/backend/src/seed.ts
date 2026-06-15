@@ -88,9 +88,12 @@ async function seed() {
       duration: '총 32강',
       tag: 'HOT',
       curriculum: [
-        { title: '1강. NestJS 소개 및 설치', youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' },
-        { title: '2강. 모듈·컨트롤러·서비스 구조', youtubeUrl: '' },
-        { title: '3강. TypeORM 연동', youtubeUrl: '' },
+        {
+          title: '1강. NestJS 소개 및 설치',
+          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        },
+        { title: '2강. 모듈·컨트롤러·서비스 구조', videoUrl: '' },
+        { title: '3강. TypeORM 연동', videoUrl: '' },
       ],
       isPublished: true,
       teacher: teacher1,
@@ -98,7 +101,8 @@ async function seed() {
     {
       title: 'React 19 + TypeScript 실전 프로젝트',
       category: 'frontend',
-      description: 'Vite + React 19 + TypeScript로 인강 사이트를 직접 만들어봅니다.',
+      description:
+        'Vite + React 19 + TypeScript로 인강 사이트를 직접 만들어봅니다.',
       thumbnail: 'https://placehold.co/320x180?text=React',
       price: 55000,
       originalPrice: 89000,
@@ -106,8 +110,8 @@ async function seed() {
       duration: '총 28강',
       tag: 'NEW',
       curriculum: [
-        { title: '1강. Vite 프로젝트 초기화', youtubeUrl: '' },
-        { title: '2강. 라우팅 설정', youtubeUrl: '' },
+        { title: '1강. Vite 프로젝트 초기화', videoUrl: '' },
+        { title: '2강. 라우팅 설정', videoUrl: '' },
       ],
       isPublished: true,
       teacher: teacher1,
@@ -123,8 +127,8 @@ async function seed() {
       duration: '총 20강',
       tag: null,
       curriculum: [
-        { title: '1강. MySQL 설치 및 기본 SQL', youtubeUrl: '' },
-        { title: '2강. 인덱스 원리', youtubeUrl: '' },
+        { title: '1강. MySQL 설치 및 기본 SQL', videoUrl: '' },
+        { title: '2강. 인덱스 원리', videoUrl: '' },
       ],
       isPublished: true,
       teacher: teacher2,
@@ -132,7 +136,8 @@ async function seed() {
     {
       title: 'Docker & CI/CD 파이프라인 구축',
       category: 'devops',
-      description: 'Docker Compose + GitHub Actions를 이용한 자동 배포를 실습합니다.',
+      description:
+        'Docker Compose + GitHub Actions를 이용한 자동 배포를 실습합니다.',
       thumbnail: 'https://placehold.co/320x180?text=Docker',
       price: 45000,
       originalPrice: 65000,
@@ -140,9 +145,9 @@ async function seed() {
       duration: '총 18강',
       tag: 'HOT',
       curriculum: [
-        { title: '1강. Docker 기초', youtubeUrl: '' },
-        { title: '2강. Docker Compose', youtubeUrl: '' },
-        { title: '3강. GitHub Actions CI', youtubeUrl: '' },
+        { title: '1강. Docker 기초', videoUrl: '' },
+        { title: '2강. Docker Compose', videoUrl: '' },
+        { title: '3강. GitHub Actions CI', videoUrl: '' },
       ],
       isPublished: true,
       teacher: teacher2,
@@ -150,7 +155,8 @@ async function seed() {
     {
       title: '정보처리기사 실기 단기 완성',
       category: 'cert',
-      description: '정보처리기사 실기 핵심 이론 + 기출 풀이를 8주 안에 완성합니다.',
+      description:
+        '정보처리기사 실기 핵심 이론 + 기출 풀이를 8주 안에 완성합니다.',
       thumbnail: 'https://placehold.co/320x180?text=Cert',
       price: 35000,
       originalPrice: 59000,
@@ -158,8 +164,8 @@ async function seed() {
       duration: '총 40강',
       tag: 'BEST',
       curriculum: [
-        { title: '1강. 데이터베이스 개요', youtubeUrl: '' },
-        { title: '2강. 운영체제 핵심', youtubeUrl: '' },
+        { title: '1강. 데이터베이스 개요', videoUrl: '' },
+        { title: '2강. 운영체제 핵심', videoUrl: '' },
       ],
       isPublished: true,
       teacher: teacher1,
@@ -179,4 +185,7 @@ async function seed() {
   console.log('\n시드 완료!');
 }
 
-seed().catch((e) => { console.error(e); process.exit(1); });
+seed().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

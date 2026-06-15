@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { User } from './user.entity';
 
@@ -18,7 +25,11 @@ export class Payment {
   @Column({ unique: true })
   idempotencyKey: string;
 
-  @Column({ type: 'simple-enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
+  @Column({
+    type: 'simple-enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.PENDING,
+  })
   status: PaymentStatus;
 
   @Column({ type: 'int' })

@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CurrentUser as CurrentUserDecorator } from './auth/current-user.decorator';
 import type { CurrentUser } from './auth/current-user.decorator';
@@ -17,10 +28,7 @@ export class CourseController {
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  findAll(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.courses.findAll(Number(page ?? 1), Number(limit ?? 20));
   }
 
@@ -33,7 +41,10 @@ export class CourseController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.TEACHER, UserRole.ADMIN)
   @ApiBearerAuth()
-  create(@Body() dto: CreateCourseDto, @CurrentUserDecorator() user: CurrentUser) {
+  create(
+    @Body() dto: CreateCourseDto,
+    @CurrentUserDecorator() user: CurrentUser,
+  ) {
     return this.courses.create(dto, user);
   }
 
@@ -53,7 +64,10 @@ export class CourseController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.TEACHER, UserRole.ADMIN)
   @ApiBearerAuth()
-  remove(@Param('id', ParseIntPipe) id: number, @CurrentUserDecorator() user: CurrentUser) {
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUserDecorator() user: CurrentUser,
+  ) {
     return this.courses.remove(id, user);
   }
 }

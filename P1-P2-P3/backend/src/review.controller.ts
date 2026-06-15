@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser as CurrentUserDecorator } from './auth/current-user.decorator';
 import type { CurrentUser } from './auth/current-user.decorator';
@@ -41,7 +51,10 @@ export class ReviewController {
   @Delete('reviews/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  remove(@Param('id', ParseIntPipe) id: number, @CurrentUserDecorator() user: CurrentUser) {
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUserDecorator() user: CurrentUser,
+  ) {
     return this.reviews.remove(id, user);
   }
 }

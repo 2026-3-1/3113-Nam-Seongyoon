@@ -34,7 +34,10 @@ export class BookmarkService {
   }
 
   async add(courseId: number, currentUser: CurrentUser) {
-    const course = await this.courses.findOne({ where: { id: courseId }, relations: { teacher: true } });
+    const course = await this.courses.findOne({
+      where: { id: courseId },
+      relations: { teacher: true },
+    });
     if (!course) throw new NotFoundException('강의를 찾을 수 없습니다.');
 
     const exists = await this.bookmarks.findOne({
@@ -46,12 +49,17 @@ export class BookmarkService {
     const user = await this.users.findOne({ where: { id: currentUser.id } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
-    const bookmark = await this.bookmarks.save(this.bookmarks.create({ user, course }));
+    const bookmark = await this.bookmarks.save(
+      this.bookmarks.create({ user, course }),
+    );
     return this.serialize(bookmark);
   }
 
   async remove(courseId: number, currentUser: CurrentUser) {
-    await this.bookmarks.delete({ user: { id: currentUser.id }, course: { id: courseId } });
+    await this.bookmarks.delete({
+      user: { id: currentUser.id },
+      course: { id: courseId },
+    });
     return { ok: true };
   }
 

@@ -26,14 +26,19 @@ export class ProgressService {
     return this.serialize(progress, course);
   }
 
-  async update(courseId: number, dto: UpdateProgressDto, currentUser: CurrentUser) {
+  async update(
+    courseId: number,
+    dto: UpdateProgressDto,
+    currentUser: CurrentUser,
+  ) {
     const course = await this.findCourse(courseId);
     const user = await this.users.findOne({ where: { id: currentUser.id } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
 
     const totalCount = course.curriculum?.length ?? 0;
     const completedCount = Math.min(dto.completedCount, totalCount);
-    const progressPercent = totalCount === 0 ? 0 : Math.floor((completedCount / totalCount) * 100);
+    const progressPercent =
+      totalCount === 0 ? 0 : Math.floor((completedCount / totalCount) * 100);
 
     let progress = await this.progresses.findOne({
       where: { user: { id: currentUser.id }, course: { id: courseId } },
@@ -47,7 +52,10 @@ export class ProgressService {
 
     progress.completedCount = Math.max(currentCompletedCount, completedCount);
     progress.totalCount = totalCount;
-    progress.progressPercent = Math.max(currentProgressPercent, progressPercent);
+    progress.progressPercent = Math.max(
+      currentProgressPercent,
+      progressPercent,
+    );
     progress.lastChapterIndex = Math.max(0, completedCount - 1);
 
     return this.serialize(await this.progresses.save(progress), course);
