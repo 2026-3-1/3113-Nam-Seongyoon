@@ -56,7 +56,8 @@ jobs:
           script: |
             set -e
             cd ~/certificatedu/P1-P2-P3/app
-            docker compose down 2>/dev/null || docker rm -f certificatedu-db certificatedu-backend certificatedu-frontend 2>/dev/null || true
+            docker compose down 2>/dev/null || true
+            docker rm -f certificatedu-db certificatedu-backend certificatedu-frontend 2>/dev/null || true
             docker compose pull
             docker compose up -d --remove-orphans
             docker image prune -f
