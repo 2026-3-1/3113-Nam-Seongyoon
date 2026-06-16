@@ -2,23 +2,54 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, getAuth } from "../lib/api";
 import { isImageSource } from "../lib/media";
-import type { MyPageProfile } from "../types";
+import type { InstructorSubscription, MyPageProfile } from "../types";
 import s from "../styles/pages.module.css";
 
-type Tab = "learning" | "bookmarks" | "orders";
+type Tab = "learning" | "bookmarks" | "orders" | "settings";
 
 export default function MyPage() {
   const auth = getAuth();
   const [profile, setProfile] = useState<MyPageProfile | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("learning");
   const [error, setError] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState<boolean>(true);
+  const [subscriptions, setSubscriptions] = useState<InstructorSubscription[]>([]);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     api
       .myPage()
       .then(setProfile)
       .catch((err) => setError(err instanceof Error ? err.message : "마이페이지 정보를 불러오지 못했습니다."));
+    if (auth) {
+      api.getNotificationPreferences().then((d) => setEmailNotifications(d.emailNotifications)).catch(() => undefined);
+    }
   }, []);
+
+  const loadSettings = () => {
+    if (settingsLoaded) return;
+    setSettingsLoaded(true);
+    api.mySubscriptions().then(setSubscriptions).catch(() => setSubscriptions([]));
+  };
+
+  const handleToggleEmail = async () => {
+    const next = !emailNotifications;
+    setEmailNotifications(next);
+    try {
+      await api.updateNotificationPreferences(next);
+    } catch {
+      setEmailNotifications(!next);
+    }
+  };
+
+  const handleUnsubscribe = async (instructorId: number) => {
+    try {
+      await api.unsubscribe(instructorId);
+      setSubscriptions((prev) => prev.filter((s) => s.instructor.id !== instructorId));
+    } catch {
+      // ignore
+    }
+  };
 
   const user = profile?.user ?? auth?.user;
   const isInstructor = user?.role === "TEACHER";
@@ -117,6 +148,9 @@ export default function MyPage() {
             <button className={`${s.myTab} ${activeTab === "orders" ? s.myTabActive : ""}`} onClick={() => setActiveTab("orders")}>
               주문내역 <span className={s.tabCount}>{orders.length}</span>
             </button>
+            <button className={`${s.myTab} ${activeTab === "settings" ? s.myTabActive : ""}`} onClick={() => { setActiveTab("settings"); loadSettings(); }}>
+              알림&amp;구독
+            </button>
           </div>
 
           {activeTab === "learning" && (
@@ -178,6 +212,55 @@ export default function MyPage() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+
+          {activeTab === "settings" && (
+            <div className={s.myCourseList}>
+              <div className={s.reviewItem}>
+                <div className={s.reviewHeader}>
+                  <strong>이메일 알림 수신</strong>
+                  <button
+                    type="button"
+                    className={`${s.btnCartAdd} ${emailNotifications ? s.btnCartAdded : ""}`}
+                    onClick={handleToggleEmail}
+                    style={{ fontSize: "0.82rem", padding: "0.35rem 0.9rem" }}
+                  >
+                    {emailNotifications ? "수신 중" : "수신 안함"}
+                  </button>
+                </div>
+                <p className={s.reviewContent}>
+                  {emailNotifications
+                    ? "구독한 강사가 새 강의를 등록하면 이메일로 알림을 받습니다."
+                    : "이메일 알림이 꺼져 있습니다. 켜면 구독 강사의 새 강의 소식을 받을 수 있습니다."}
+                </p>
+              </div>
+              <div className={s.reviewItem}>
+                <strong>구독 중인 강사 ({subscriptions.length}명)</strong>
+                {subscriptions.length === 0 ? (
+                  <p className={s.reviewContent}>구독 중인 강사가 없습니다. 강의 상세 페이지에서 강사를 구독해 보세요.</p>
+                ) : (
+                  <div className={s.myCourseList} style={{ marginTop: "0.75rem" }}>
+                    {subscriptions.map((sub) => (
+                      <div key={sub.id} className={s.myCourseItem}>
+                        <div className={s.myCourseInfo}>
+                          <div className={s.myCourseTitle}>{sub.instructor.name}</div>
+                          <div className={s.myCourseMeta}>{sub.instructor.email} · {new Date(sub.createdAt).toLocaleDateString("ko-KR")} 구독</div>
+                        </div>
+                        <div className={s.myCourseAction}>
+                          <button
+                            type="button"
+                            className={s.btnContinue}
+                            onClick={() => handleUnsubscribe(sub.instructor.id)}
+                          >
+                            구독 취소
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

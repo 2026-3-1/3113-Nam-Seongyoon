@@ -13,6 +13,7 @@ import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto';
 import { Course } from './entities/course.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { UserRole } from './entities/user.entity';
+import { SubscriptionService } from './subscription/subscription.service';
 import { UserService } from './user.service';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class CourseService {
     @InjectRepository(OrderItem)
     private readonly orderItems: Repository<OrderItem>,
     private readonly users: UserService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   async findAll(page = 1, limit = 20) {
@@ -140,9 +142,15 @@ export class CourseService {
       duration: this.resolveDuration(dto.duration, curriculum),
       teacher,
     });
-    return this.courses
-      .save(course)
-      .then((saved) => this.serializeCourse(saved, 0, 0));
+    const saved = await this.courses.save(course);
+    if (saved.isPublished) {
+      this.subscriptionService.notifyNewCourse(saved).catch((err) => {
+        this.logger.warn(
+          `구독자 알림 실패: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+    }
+    return this.serializeCourse(saved, 0, 0);
   }
 
   async update(id: number, dto: UpdateCourseDto, currentUser: CurrentUser) {

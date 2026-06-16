@@ -1,4 +1,4 @@
-import type { AuthUser, Bookmark, CartItem, Course, CourseProgress, MyPageProfile, Order, Review, Role } from "../types";
+import type { AuthUser, Bookmark, CartItem, Course, CourseProgress, InstructorSubscription, MyPageProfile, NotificationPreferences, Order, Review, Role } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const AUTH_KEY = "certificatedu_auth";
@@ -202,5 +202,26 @@ export const api = {
   },
   deleteReview(id: number) {
     return request<{ ok: boolean }>(`/reviews/${id}`, { method: "DELETE" });
+  },
+  subscriptionStatus(instructorId: number) {
+    return request<{ subscribed: boolean }>(`/subscriptions/${instructorId}`);
+  },
+  subscribe(instructorId: number) {
+    return request<{ subscribed: boolean }>(`/subscriptions/${instructorId}`, { method: "POST" });
+  },
+  unsubscribe(instructorId: number) {
+    return request<{ subscribed: boolean }>(`/subscriptions/${instructorId}`, { method: "DELETE" });
+  },
+  mySubscriptions() {
+    return request<InstructorSubscription[]>("/subscriptions");
+  },
+  getNotificationPreferences() {
+    return request<NotificationPreferences>("/users/me/notification-preferences");
+  },
+  updateNotificationPreferences(emailNotifications: boolean) {
+    return request<NotificationPreferences>("/users/me/notification-preferences", {
+      method: "PATCH",
+      body: JSON.stringify({ emailNotifications }),
+    });
   },
 };

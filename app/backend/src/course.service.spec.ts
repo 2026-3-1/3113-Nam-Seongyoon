@@ -6,6 +6,7 @@ import { Course } from './entities/course.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { User, UserRole } from './entities/user.entity';
 import { UserProfile } from './entities/user-profile.entity';
+import { SubscriptionService } from './subscription/subscription.service';
 import { UserService } from './user.service';
 
 const mockTeacher: User = {
@@ -16,6 +17,7 @@ const mockTeacher: User = {
   passwordHash: 'hash',
   isActive: true,
   refreshTokenHash: null,
+  emailNotifications: true,
   courses: [],
   reviews: [],
   profile: null as unknown as UserProfile,
@@ -81,6 +83,10 @@ describe('CourseService', () => {
         {
           provide: UserService,
           useValue: { findOne: jest.fn().mockResolvedValue(mockTeacher) },
+        },
+        {
+          provide: SubscriptionService,
+          useValue: { notifyNewCourse: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();

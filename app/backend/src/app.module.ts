@@ -14,6 +14,7 @@ import { OrderModule } from './order.module';
 import { ProgressModule } from './progress.module';
 import { ReviewModule } from './review.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 import { UserModule } from './user.module';
 import { UploadController } from './upload.controller';
 
@@ -71,6 +72,7 @@ import { UploadController } from './upload.controller';
     ReviewModule,
     NotificationModule,
     SchedulerModule,
+    SubscriptionModule,
   ],
 })
 export class AppModule {}

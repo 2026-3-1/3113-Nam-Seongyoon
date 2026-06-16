@@ -82,6 +82,27 @@ export class NotificationService {
     });
   }
 
+  sendNewCourseNotification(
+    to: string,
+    subscriberName: string,
+    instructorName: string,
+    courseTitle: string,
+    courseId: number,
+  ) {
+    return this.sendMail({
+      to,
+      subject: `[CertificatEdu] ${instructorName} 강사의 새 강의가 등록되었습니다`,
+      html: `
+        <h2>안녕하세요, ${subscriberName}님!</h2>
+        <p>구독 중인 <strong>${instructorName}</strong> 강사의 새 강의가 등록되었습니다.</p>
+        <p>강의명: <strong>${courseTitle}</strong></p>
+        <p>지금 바로 확인해보세요!</p>
+        <hr/>
+        <p style="color:#999;font-size:12px">CertificatEdu · <a href="/courses/${courseId}">강의 보러가기</a></p>
+      `,
+    });
+  }
+
   sendDailyDigest(
     to: string,
     newCourseCount: number,

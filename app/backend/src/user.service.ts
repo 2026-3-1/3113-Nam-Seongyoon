@@ -86,6 +86,16 @@ export class UserService {
     return this.users.update(userId, { refreshTokenHash: null });
   }
 
+  async getNotificationPreferences(userId: number) {
+    const user = await this.findOne(userId);
+    return { emailNotifications: user.emailNotifications };
+  }
+
+  async updateNotificationPreferences(userId: number, emailNotifications: boolean) {
+    await this.users.update(userId, { emailNotifications });
+    return { emailNotifications };
+  }
+
   async getMyPage(currentUser: CurrentUser) {
     const user = await this.findOne(currentUser.id);
     const profile = await this.ensureProfile(user);

@@ -34,6 +34,11 @@ services:
       CORS_ORIGINS: http://3.34.42.16
       TOSS_CLIENT_KEY: ${TOSS_CLIENT_KEY:-}
       TOSS_SECRET_KEY: ${TOSS_SECRET_KEY:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@certificatedu.dev}
     depends_on:
       db:
         condition: service_healthy

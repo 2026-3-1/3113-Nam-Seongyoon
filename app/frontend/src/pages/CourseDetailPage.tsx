@@ -17,13 +17,19 @@ export default function CourseDetailPage() {
   const [message, setMessage] = useState("");
   const [cartMessage, setCartMessage] = useState("");
   const [bookmarked, setBookmarked] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [editRating, setEditRating] = useState(5);
   const [editContent, setEditContent] = useState("");
   const auth = getAuth();
 
   useEffect(() => {
-    api.course(courseId).then(setCourse).catch(() => setCourse(null));
+    api.course(courseId).then((c) => {
+      setCourse(c);
+      if (auth && c.teacher && c.teacher.id !== auth.user.id) {
+        api.subscriptionStatus(c.teacher.id).then((d) => setSubscribed(d.subscribed)).catch(() => setSubscribed(false));
+      }
+    }).catch(() => setCourse(null));
     api.reviews(courseId).then(setReviews).catch(() => setReviews([]));
     if (auth) {
       api.courseProgress(courseId).then(setProgress).catch(() => setProgress(null));
@@ -31,6 +37,7 @@ export default function CourseDetailPage() {
     } else {
       setProgress(null);
       setBookmarked(false);
+      setSubscribed(false);
     }
   }, [auth?.accessToken, courseId]);
 
@@ -84,6 +91,26 @@ export default function CourseDetailPage() {
       }
     } catch (error) {
       setCartMessage(error instanceof Error ? error.message : "북마크를 변경하지 못했습니다.");
+    }
+  };
+
+  const toggleSubscribe = async () => {
+    if (!auth || !course?.teacher) {
+      setCartMessage("구독하려면 로그인이 필요합니다.");
+      return;
+    }
+    try {
+      if (subscribed) {
+        await api.unsubscribe(course.teacher.id);
+        setSubscribed(false);
+        setCartMessage("구독을 취소했습니다.");
+      } else {
+        await api.subscribe(course.teacher.id);
+        setSubscribed(true);
+        setCartMessage("강사를 구독했습니다. 새 강의 등록 시 이메일로 알립니다.");
+      }
+    } catch (error) {
+      setCartMessage(error instanceof Error ? error.message : "구독 처리에 실패했습니다.");
     }
   };
 
@@ -325,7 +352,23 @@ export default function CourseDetailPage() {
             </button>
             {cartMessage && <p className={s.formError}>{cartMessage}</p>}
             <div className={s.courseInfo}>
-              <div className={s.infoRow}><span className={s.infoLabel}>강사</span><span className={s.infoValue}>{course.teacher?.name ?? "인증 강사"}</span></div>
+              <div className={s.infoRow}>
+                <span className={s.infoLabel}>강사</span>
+                <span className={s.infoValue}>{course.teacher?.name ?? "인증 강사"}</span>
+              </div>
+              {auth && course.teacher && course.teacher.id !== auth.user.id && (
+                <div className={s.infoRow}>
+                  <span className={s.infoLabel}></span>
+                  <button
+                    type="button"
+                    onClick={toggleSubscribe}
+                    className={`${s.btnCartAdd} ${subscribed ? s.btnCartAdded : ""}`}
+                    style={{ fontSize: "0.82rem", padding: "0.35rem 0.9rem" }}
+                  >
+                    {subscribed ? "구독 중" : "구독하기"}
+                  </button>
+                </div>
+              )}
               <div className={s.infoRow}><span className={s.infoLabel}>강의 분량</span><span className={s.infoValue}>{course.duration}</span></div>
               <div className={s.infoRow}><span className={s.infoLabel}>내 진행률</span><span className={s.infoValue}>{progress?.progressPercent ?? 0}%</span></div>
               <div className={s.infoRow}><span className={s.infoLabel}>평점</span><span className={s.infoValue}>{averageRating.toFixed(1)} / 5.0</span></div>

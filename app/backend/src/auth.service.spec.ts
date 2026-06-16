@@ -16,6 +16,7 @@ const mockUser: User = {
   passwordHash: '',
   isActive: true,
   refreshTokenHash: null,
+  emailNotifications: true,
   courses: [],
   reviews: [],
   profile: null as unknown as UserProfile,

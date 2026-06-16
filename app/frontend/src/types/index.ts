@@ -106,3 +106,17 @@ export interface InstructorStudentProgress {
   progress: CourseProgress;
   updatedAt: string;
 }
+
+export interface InstructorSubscription {
+  id: number;
+  createdAt: string;
+  instructor: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+}

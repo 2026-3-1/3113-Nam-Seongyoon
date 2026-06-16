@@ -48,11 +48,16 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           TOSS_CLIENT_KEY: ${{ secrets.TOSS_CLIENT_KEY }}
           TOSS_SECRET_KEY: ${{ secrets.TOSS_SECRET_KEY }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
         with:
           host: 3.34.42.16
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          envs: DOCKERHUB_USERNAME,TOSS_CLIENT_KEY,TOSS_SECRET_KEY
+          envs: DOCKERHUB_USERNAME,TOSS_CLIENT_KEY,TOSS_SECRET_KEY,MAIL_HOST,MAIL_PORT,MAIL_USER,MAIL_PASS,MAIL_FROM
           script: |
             set -e
             cd ~/certificatedu/P1-P2-P3/app

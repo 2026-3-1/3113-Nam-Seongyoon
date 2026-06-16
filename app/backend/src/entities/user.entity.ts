@@ -37,6 +37,9 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: true })
+  emailNotifications: boolean;
+
   @Column({ type: 'text', nullable: true, default: null })
   refreshTokenHash: string | null;
 
