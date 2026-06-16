@@ -3,7 +3,6 @@ name: certificatedu
 services:
   db:
     image: mysql:8.0
-    container_name: certificatedu-db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -20,7 +19,6 @@ services:
 
   backend:
     image: ${DOCKERHUB_USERNAME:-local}/certificatedu-backend:latest
-    container_name: certificatedu-backend
     restart: unless-stopped
     environment:
       PORT: 3000
@@ -51,7 +49,6 @@ services:
 
   frontend:
     image: ${DOCKERHUB_USERNAME:-local}/certificatedu-frontend:latest
-    container_name: certificatedu-frontend
     restart: unless-stopped
     ports:
       - "80:80"
