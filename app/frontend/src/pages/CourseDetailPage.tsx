@@ -302,20 +302,27 @@ export default function CourseDetailPage() {
         <div className={s.detailRight}>
           <div className={s.stickyCard}>
             <div className={s.priceBlock}>
-              {originalPrice && (
+              {!course.hasPurchased && originalPrice && (
                 <div className={s.origPrice}>
                   {originalPrice.toLocaleString()}원
                   {discount && <span className={s.discountBadge}>{discount}% 할인</span>}
                 </div>
               )}
-              <div className={s.mainPrice}>{course.price.toLocaleString()}원</div>
+              <div className={s.mainPrice}>
+                {course.hasPurchased ? "수강 중" : `${course.price.toLocaleString()}원`}
+              </div>
             </div>
-            <Link to={`/courses/${course.id}/learn`} className={s.btnEnroll}>지금 수강하기</Link>
-            <button type="button" onClick={addToCart} className={s.btnCartAdd}>장바구니 담기</button>
+            {course.hasPurchased ? (
+              <Link to={`/courses/${course.id}/learn`} className={s.btnEnroll}>지금 수강하기</Link>
+            ) : (
+              <>
+                <button type="button" onClick={addToCart} className={s.btnEnroll}>장바구니 담기</button>
+                <Link to="/cart" className={s.summaryMoreLink}>장바구니 보기</Link>
+              </>
+            )}
             <button type="button" onClick={toggleBookmark} className={`${s.btnCartAdd} ${bookmarked ? s.btnCartAdded : ""}`} style={{ marginTop: "0.75rem" }}>
               {bookmarked ? "북마크 해제" : "북마크"}
             </button>
-            <Link to="/cart" className={s.summaryMoreLink}>장바구니 보기</Link>
             {cartMessage && <p className={s.formError}>{cartMessage}</p>}
             <div className={s.courseInfo}>
               <div className={s.infoRow}><span className={s.infoLabel}>강사</span><span className={s.infoValue}>{course.teacher?.name ?? "인증 강사"}</span></div>

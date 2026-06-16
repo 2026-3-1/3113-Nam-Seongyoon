@@ -77,6 +77,17 @@ export default function LearnPage() {
     );
   }
 
+  if (!course.hasPurchased && curriculum.every((c) => !c.isPreview)) {
+    return (
+      <div className={s.learnWrap}>
+        <div className={s.emptyState}>
+          <div className={s.emptyTitle}>구매 후 수강할 수 있습니다.</div>
+          <Link to={`/courses/${course.id}`} className={s.btnPrimary}>강의 소개 보기</Link>
+        </div>
+      </div>
+    );
+  }
+
   const activeChapter = curriculum[activeIndex];
 
   return (
