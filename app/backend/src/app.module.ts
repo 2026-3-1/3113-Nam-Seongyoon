@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TerminusModule } from '@nestjs/terminus';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth.module';
 import { BookmarkModule } from './bookmark.module';
 import { CartModule } from './cart.module';
@@ -64,6 +65,7 @@ import { UploadController } from './upload.controller';
     ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
+    AdminModule,
     CourseModule,
     BookmarkModule,
     CartModule,

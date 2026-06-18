@@ -15,6 +15,7 @@ const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
 const PaymentFailPage    = lazy(() => import("./pages/PaymentFailPage"));
 const MyPage             = lazy(() => import("./pages/MyPage"));
 const InstructorPage     = lazy(() => import("./pages/InstructorPage"));
+const AdminPage          = lazy(() => import("./pages/AdminPage"));
 // AuthPages는 named export이므로 default로 래핑
 const LoginPage    = lazy(() => import("./pages/AuthPages").then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/AuthPages").then((m) => ({ default: m.RegisterPage })));
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/login"             element={<LoginPage />} />
           <Route path="/register"          element={<RegisterPage />} />
           <Route path="/courses/:id/learn" element={<RequireStudentArea><LearnPage /></RequireStudentArea>} />
+          <Route path="/admin"             element={<RequireRole roles={["ADMIN"]}><Layout><AdminPage /></Layout></RequireRole>} />
         </Routes>
       </Suspense>
     </BrowserRouter>

@@ -1,4 +1,4 @@
-import type { AuthUser, Bookmark, CartItem, Course, CourseProgress, InstructorSubscription, MyPageProfile, NotificationPreferences, Order, Review, Role } from "../types";
+import type { AdminCourse, AdminReview, AdminUser, AuthUser, Bookmark, CartItem, Course, CourseProgress, InstructorSubscription, MyPageProfile, NotificationPreferences, Order, Review, Role } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const AUTH_KEY = "certificatedu_auth";
@@ -223,5 +223,23 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ emailNotifications }),
     });
+  },
+  adminUsers() {
+    return request<AdminUser[]>("/admin/users");
+  },
+  adminDeleteUser(id: number) {
+    return request<{ ok: boolean }>(`/admin/users/${id}`, { method: "DELETE" });
+  },
+  adminReviews() {
+    return request<AdminReview[]>("/admin/reviews");
+  },
+  adminDeleteReview(id: number) {
+    return request<{ ok: boolean }>(`/admin/reviews/${id}`, { method: "DELETE" });
+  },
+  adminCourses() {
+    return request<AdminCourse[]>("/admin/courses");
+  },
+  adminDeleteCourse(id: number) {
+    return request<{ ok: boolean }>(`/admin/courses/${id}`, { method: "DELETE" });
   },
 };

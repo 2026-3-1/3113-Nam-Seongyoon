@@ -120,3 +120,31 @@ export interface InstructorSubscription {
 export interface NotificationPreferences {
   emailNotifications: boolean;
 }
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: Role;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AdminReview {
+  id: number;
+  rating: number;
+  content: string;
+  createdAt: string;
+  user: { id: number; name: string; email: string };
+  course: { id: number; title: string };
+}
+
+export interface AdminCourse {
+  id: number;
+  title: string;
+  category: string;
+  price: number;
+  isPublished: boolean;
+  createdAt: string;
+  teacher: { id: number; name: string } | null;
+}
